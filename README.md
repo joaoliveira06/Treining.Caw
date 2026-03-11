@@ -2049,5 +2049,36 @@ document.addEventListener('keydown',e=>{
       }
     });
   </script>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+
+  const supabase = window.supabase.createClient(
+  "https://rffxvfvlsxzqpcgyybhp.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmZnh2ZnZsc3h6cXBjZ3l5YmhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjU1NDEsImV4cCI6MjA4ODgwMTU0MX0.kOBomjqIFQhrD5UyGbj9NWYGW0W0rakyWaQ1wRHMrbE"
+      );
+
+async function salvarResultado(nome, treinamento, nota){
+
+const { data, error } = await supabase
+.from("resultados")
+.insert([
+{
+nome: nome,
+treinamento: treinamento,
+nota: nota
+}
+]);
+
+if(error){
+alert("Erro ao salvar");
+}else{
+alert("Resultado enviado com sucesso!");
+}
+
+}
+
+</script>
 </body>
 </html>
