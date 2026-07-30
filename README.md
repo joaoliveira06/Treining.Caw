@@ -419,11 +419,7 @@ img{pointer-events:none;-webkit-user-drag:none}
   </div>
   <h2 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;color:var(--t1);margin-bottom:5px">Acesso à Plataforma</h2>
   <p style="font-size:14px;color:var(--t2);margin-bottom:18px">Entre com suas credenciais corporativas.</p>
-  <div class="dbox">
-    <strong>Master:</strong> hans / Hans7411 &nbsp;|&nbsp;
-    <strong>Gestor:</strong> geraldo / Ger@2025 &nbsp;|&nbsp;
-    <strong>Colab.:</strong> joao / Joao@2025
-  </div>
+
   <label class="flbl">Usuário</label>
   <input class="finp" type="text" id="loginUser" placeholder="seu.usuario" autocomplete="username">
   <label class="flbl">Senha</label>
@@ -528,6 +524,7 @@ const DEFAULT_USERS = [
   { id:3, name:'João Silva', login:'joao', pass:'Joao@2025', role:'Operador CNC', sector:'Produção', type:'colaborador', ini:'JS', color:'#FF6A00', courseId:1, active:true },
   { id:4, name:'Maria Fernanda', login:'maria', pass:'Maria@2025', role:'Técnica de Qualidade', sector:'Qualidade', type:'colaborador', ini:'MF', color:'#3b82f6', courseId:3, active:true },
   { id:5, name:'Ana Paula Ramos', login:'ana', pass:'Ana@2025', role:'Coord. Segurança', sector:'SST', type:'colaborador', ini:'AP', color:'#f59e0b', courseId:1, active:true },
+  { id:6, name:'Treinamento Comercial', login:'Treinamento_Comercial', pass:'CAW2026', role:'Comercial', sector:'Comercial', type:'colaborador', ini:'TC', color:'#FF6A00', courseId:1, active:true },
 ];
 let USERS = JSON.parse(localStorage.getItem('caw_users')||'null') || DEFAULT_USERS;
 function saveUsers(){ localStorage.setItem('caw_users', JSON.stringify(USERS)); }
