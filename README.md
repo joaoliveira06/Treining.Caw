@@ -512,6 +512,32 @@ const DEFAULT_COURSES = [
       },
     ]
   },
+  { id:4, title:'RELATÓRIOS', instructor:'C.A.W. Projetos e Consultoria', category:'Engenharia', ico:'🏗️', hours:4, minScore:7.0, maxAttempts:3, sequential:true,
+    modules:[
+      { id:1, order:1, title:'Módulo 02 — Fundação',
+        lessons:[
+          {id:1,title:'Definição de Fundação',type:'pdf',url:'',text:'Fundações são os elementos estruturais destinados a transferir as cargas da estrutura vertical ao terreno no qual ela se apoia. São componentes essenciais para garantir a estabilidade e segurança das estruturas de telecomunicações, como torres e postes.'},
+          {id:2,title:'Parâmetros para Escolha da Fundação',type:'pdf',url:'',text:'Os principais parâmetros para definir o tipo de fundação são: topografia da área (desníveis, riscos de erosão, necessidade de cortes ou aterros), características do solo (resistência, nível do lençol freático, matacões e estratificação), dados da estrutura (peso próprio da EV, área de exposição ao vento, quantidade de bases e área de abertura na base), dados sobre construções vizinhas e aspectos econômicos.'},
+          {id:3,title:'Tipos de Fundações: Rasas e Profundas',type:'pdf',url:'',text:'As fundações são classificadas como rasas ou profundas conforme a profundidade da base. Fundações profundas transmitem cargas pela base (resistência de ponta) e/ou superfície lateral (resistência de fuste), com base apoiada em profundidade superior a 2 vezes a menor dimensão em planta e mínimo de 3,0 m — incluem estacas e tubulões (NBR 6122/2019). Fundações rasas têm a base assentada em profundidade inferior a 2 vezes a menor dimensão da fundação, transmitindo os esforços da superestrutura ao solo (NBR 6122/2019).'},
+          {id:4,title:'Tubulão e Estaca Raiz',type:'pdf',url:'',text:'Tubulão: elemento de fundação profunda cilíndrico, em que na etapa final de escavação faz-se necessária a descida de operário. Pode ser a céu aberto ou sob ar comprimido (pneumático), com ou sem base alargada, e executado com ou sem revestimento de aço ou concreto (NBR 611/2019). Cargas transmitidas essencialmente pela base a solo de maior resistência. É mais econômico e utilizado em solos onde camadas menos compressíveis não estão próximas à superfície.\n\nEstaca Raiz: estacas concretadas in-loco, injetadas, com fuste totalmente armado, de pequeno diâmetro e elevada capacidade de carga, baseada essencialmente na resistência por atrito lateral do solo. A irregularidade da estaca aumenta a área de contato com o solo, beneficiando a dissipação da carga. Necessita equipamento específico, tempo de serviço longo e custo elevado.'},
+          {id:5,title:'Sapata e Radier',type:'pdf',url:'',text:'Sapata: elemento de fundação rasa, de concreto armado, dimensionado de modo que as tensões de tração nele resultantes sejam resistidas pelo emprego de armadura especialmente disposta para esse fim.\n\nRadier: elemento de fundação superficial, executado em concreto armado, que recebe todas as cargas através das bases da torre, distribuindo-as de forma uniforme no solo. Possui custo elevado devido ao grande volume de concreto e é utilizado em terrenos de baixa resistência com camada de solo profunda.'},
+          {id:6,title:'Reforços de Fundação',type:'pdf',url:'',text:'Quando há necessidade de reforço na fundação da EV, a primeira opção é utilizar o mesmo tipo de fundação existente. Para reforço com tubulão: escavar 1 tubulão por vez ou no máximo 2, com risco de descalçar a fundação existente e desmoronamento, porém é mais econômico. Para reforço com estaca raiz: escavação parcial, grande movimentação de terra no site e necessidade de estaiar a torre. Para reforço com radier: escavação parcial, grande movimentação de terra no site e necessidade de estaiar a torre.'}
+        ],
+        quiz:{ title:'Avaliação — Fundações', minScore:7.0, maxAttempts:3, questions:[
+          {id:1,txt:'O que é uma fundação?',opts:['Uma cobertura de telhado','Um elemento estrutural que transfere as cargas da estrutura ao terreno','Um tipo de parede','Um sistema de ventilação'],ok:1},
+          {id:2,txt:'Qual parâmetro NÃO é considerado para a escolha da fundação?',opts:['Topografia da área','Cor do solo','Características do solo','Aspectos econômicos'],ok:1},
+          {id:3,txt:'Fundações profundas têm a base apoiada em profundidade mínima de:',opts:['1,0 m','2,0 m','3,0 m','5,0 m'],ok:2},
+          {id:4,txt:'Qual norma define os tipos de fundações rasas e profundas?',opts:['NBR 6118','NBR 6122/2019','NBR 7190','NBR 16280'],ok:1},
+          {id:5,txt:'Qual dos seguintes é um tipo de fundação rasa?',opts:['Tubulão','Estaca raiz','Sapata','Estaca helicoidal'],ok:2},
+          {id:6,txt:'O tubulão é classificado como fundação:',opts:['Rasa','Superficial','Profunda','Flutuante'],ok:2},
+          {id:7,txt:'A estaca raiz tem sua capacidade de carga baseada essencialmente em:',opts:['Resistência de ponta','Resistência por atrito lateral do solo','Peso do concreto','Temperatura do solo'],ok:1},
+          {id:8,txt:'O radier é um elemento de fundação que recebe as cargas e as distribui:',opts:['Em um único ponto','De forma uniforme no solo','Apenas na base da torre','Somente na superfície'],ok:1},
+          {id:9,txt:'Quando há necessidade de reforço na fundação da EV, a primeira opção é:',opts:['Usar um tipo diferente de fundação','Demolir e reconstruir','Utilizar o mesmo tipo de fundação existente','Ignorar o reforço'],ok:2},
+          {id:10,txt:'O radier é mais indicado para terrenos com:',opts:['Alta resistência e solo raso','Baixa resistência e camada de solo profunda','Solo rochoso','Terreno inclinado apenas'],ok:1}
+        ]}
+      },
+    ]
+  },
 ];
 
 let COURSES = JSON.parse(localStorage.getItem('caw_courses')||'null') || DEFAULT_COURSES;
