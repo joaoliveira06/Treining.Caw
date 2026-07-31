@@ -550,7 +550,7 @@ const DEFAULT_USERS = [
   { id:3, name:'João Silva', login:'joao', pass:'Joao@2025', role:'Operador CNC', sector:'Produção', type:'colaborador', ini:'JS', color:'#FF6A00', courseId:1, active:true },
   { id:4, name:'Maria Fernanda', login:'maria', pass:'Maria@2025', role:'Técnica de Qualidade', sector:'Qualidade', type:'colaborador', ini:'MF', color:'#3b82f6', courseId:3, active:true },
   { id:5, name:'Ana Paula Ramos', login:'ana', pass:'Ana@2025', role:'Coord. Segurança', sector:'SST', type:'colaborador', ini:'AP', color:'#f59e0b', courseId:1, active:true },
-  { id:6, name:'Treinamento Comercial', login:'Treinamento_Comercial', pass:'CAW2026', role:'Comercial', sector:'Comercial', type:'colaborador', ini:'TC', color:'#FF6A00', courseId:4, active:true },
+  { id:6, name:'Treinamento Comercial', login:'treinamento', pass:'caw2026', role:'Comercial', sector:'Comercial', type:'colaborador', ini:'TC', color:'#FF6A00', courseId:4, active:true },
 ];
 let USERS = JSON.parse(localStorage.getItem('caw_users')||'null') || DEFAULT_USERS;
 function saveUsers(){ localStorage.setItem('caw_users', JSON.stringify(USERS)); }
