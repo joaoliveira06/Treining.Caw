@@ -535,10 +535,8 @@ const DEFAULT_COURSES = [
   },
 ];
 
+localStorage.removeItem('caw_courses');
 let COURSES = DEFAULT_COURSES;
-try{ const cached=JSON.parse(localStorage.getItem('caw_courses')||'null'); if(cached){ /* merge progress but keep DEFAULT_COURSES as source of truth */ } }catch(e){}
-localStorage.setItem('caw_courses', JSON.stringify(DEFAULT_COURSES));
-COURSES = DEFAULT_COURSES;
 function saveCourses(){ localStorage.setItem('caw_courses', JSON.stringify(COURSES)); }
 
 // ── USERS ─────────────────────────────────────────────────────────
