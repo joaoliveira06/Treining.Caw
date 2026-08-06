@@ -544,8 +544,25 @@ const DEFAULT_COURSES = [
           {id:6,txt:'Quais são os tipos de base quanto à abertura?',opts:['Alta e baixa','Larga e estreita','Compacta e normal','Fixa e móvel'],ok:2},
           {id:7,txt:'Quais são os 4 tipos de perfil utilizados nas torres?',opts:['Aço, ferro, alumínio e cobre','Cantoneira, tubo, barra maciça e chapa dobrada','Redondo, quadrado, oval e triangular','Liso, estriado, perfurado e ondulado'],ok:1},
           {id:8,txt:'Qual a função das arruelas nas estruturas?',opts:['Servir como parafuso','Proteger as superfícies da peça e evitar contato direto com a porca','Sustentar a torre','Medir a altura da estrutura'],ok:1},
-          {id:9,txt:'Para reforço de torres com cantoneira e chapa dobrada, usa-se:',opts:['Instalar uma torre em volta','Duplicar a peça (montante existente + montante de reforço)','Adicionar cabos de aço','Trocar toda a estrutura'],ok:1},
+          {id:9,txt:'Para reforço de torres com cantoneira e chapa dobrada, usa-se:',opts:['Instalar una torre em volta','Duplicar a peça (montante existente + montante de reforço)','Adicionar cabos de aço','Trocar toda a estrutura'],ok:1},
           {id:10,txt:'Qual norma trata das forças devidas ao vento em edificações?',opts:['NBR 6118','NBR 6122','NBR 6123/1988','NBR 16280'],ok:2}
+        ]}
+      },
+      { id:3, order:3, title:'Módulo 04 — Acessórios',
+        lessons:[
+          {id:1,title:'ACESSÓRIOS',type:'pdf',url:'https://files.manuscdn.com/user_upload_by_module/session_file/310519663385446112/nGOgzYhOUshOFAPc.pdf',text:''}
+        ],
+        quiz:{ title:'Avaliação — Acessórios', minScore:7.0, maxAttempts:3, questions:[
+          {id:1,txt:'O que são acessórios nas estruturas verticais (EV)?',opts:['Elementos estruturais principais de sustentação','Elementos que possuem função não estrutural na EV','Cabos de alta tensão','Fundadores de concreto armado'],ok:1},
+          {id:2,txt:'Onde deve ser afixada obrigatoriamente a placa de identificação?',opts:['No topo da torre','Na base da torre','No meio dos cabos','Na sala de baterias'],ok:1},
+          {id:3,txt:'As esteiras têm como principal finalidade:',opts:['Servir de degrau para subir na torre','Organizar e proteger a passagem de cabos de RF e força','Iluminar a torre à noite','Fixar as antenas parabólicas'],ok:1},
+          {id:4,txt:'O sistema trava-quedas é obrigatório em escadas acima de:',opts:['1,0 metro','2,0 metros','3,5 metros','10 metros'],ok:1},
+          {id:5,txt:'Como é classificado o balizamento noturno convencional?',opts:['Apenas painéis solares','QCAB, fotocélula, eletrodutos, conduletes e sinalizador','Cabos estaiados de cobre','Torres autoportantes de aço'],ok:1},
+          {id:6,txt:'O que significa a sigla TGB no sistema de aterramento?',opts:['Torre Geral de Base','Telecommunication Grounding Bar (Barramento de Aterramento Principal)','Terminal Guarda-Brusco','Transformador Geral de Balizamento'],ok:1},
+          {id:7,txt:'Qual componente faz parte do SPDA (Sistema de Proteção Contra Descargas Atmosféricas)?',opts:['Captor, mastro, cabo de descida e placa TGB','Apenas lâmpadas de balizamento','Arruelas de pressão e porcas','Esteiras porta-cabos'],ok:0},
+          {id:8,txt:'O balizamento diurno é caracterizado principalmente por:',opts:['Luzes piscantes vermelhas à noite','Pintura de faixas em cores contrastantes (ex: laranja e branco) na torre','Painéis solares autônomos','Conectores split bolt'],ok:1},
+          {id:9,txt:'O que são split bolts?',opts:['Parafusos de fixação de fundação','Conectores utilizados para derivação e união de cabos de aterramento','Isoladores de porcelana','Suportes de antenas setoriais'],ok:1},
+          {id:10,txt:'Qual a função principal dos isoladores no SPDA ou descidas?',opts:['Conduzir raio para a base','Isolar eletricamente partes condutoras ou fixar cabos mantendo distância da estrutura','Aumentar a altura da torre','Medir a velocidade do vento'],ok:1}
         ]}
       },
     ]
@@ -553,7 +570,7 @@ const DEFAULT_COURSES = [
 ];
 
 let COURSES = JSON.parse(localStorage.getItem('caw_courses')) || DEFAULT_COURSES;
-// Auto-cura: garante que o curso 4 (RELATÓRIOS) tenha os 2 módulos atualizados (Fundação e Estruturas)
+// Auto-cura: garante que o curso 4 (RELATÓRIOS) tenha todos os módulos atualizados
 const _defRel = DEFAULT_COURSES.find(c => c.id === 4);
 const _currRel = COURSES.find(c => c.id === 4);
 if (_currRel && _defRel && _currRel.modules.length < _defRel.modules.length) {
@@ -913,6 +930,12 @@ function markLessonDone(cid,mid,lid){
   saveProgress();
   toast('✅ Aula concluída!');
   courseViewer(); // refresh to unlock next items
+  // Redireciona diretamente para a prova do módulo assim que concluir a aula
+  const c=COURSES.find(x=>x.id===cid);
+  const m=c?.modules?.find(x=>x.id===mid);
+  if(m && m.quiz && isModuleLessonsDone(CU.id,cid,m)){
+    showQuiz(cid,mid);
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
