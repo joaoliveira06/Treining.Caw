@@ -552,8 +552,17 @@ const DEFAULT_COURSES = [
   },
 ];
 
-let COURSES = DEFAULT_COURSES;
-localStorage.setItem('caw_courses', JSON.stringify(DEFAULT_COURSES));
+let COURSES = JSON.parse(localStorage.getItem('caw_courses')) || DEFAULT_COURSES;
+// Auto-cura: garante que o curso 4 (RELATÓRIOS) tenha os 2 módulos atualizados (Fundação e Estruturas)
+const _defRel = DEFAULT_COURSES.find(c => c.id === 4);
+const _currRel = COURSES.find(c => c.id === 4);
+if (_currRel && _defRel && _currRel.modules.length < _defRel.modules.length) {
+  _currRel.modules = _defRel.modules;
+  localStorage.setItem('caw_courses', JSON.stringify(COURSES));
+} else if (!_currRel) {
+  COURSES = DEFAULT_COURSES;
+  localStorage.setItem('caw_courses', JSON.stringify(DEFAULT_COURSES));
+}
 function saveCourses(){ localStorage.setItem('caw_courses', JSON.stringify(COURSES)); }
 
 // ── USERS ─────────────────────────────────────────────────────────
