@@ -533,7 +533,7 @@ const DEFAULT_COURSES = [
       },
       { id:2, order:2, title:'Módulo 03 — Estruturas',
         lessons:[
-          {id:1,title:'ESTRUTURAS',type:'pdf',url:'https://files.manuscdn.com/user_upload_by_module/session_file/310519663187515352/UoMQDqHObxcSjwtG.pdf',text:''}
+          {id:1,title:'ESTRUTURAS',type:'pdf',url:'https://files.manuscdn.com/user_upload_by_module/session_file/310519663385446112/hLQnnIJAxjajIYTk.pdf',text:''}
         ],
         quiz:{ title:'Avaliação — Estruturas', minScore:7.0, maxAttempts:3, questions:[
           {id:1,txt:'O que são as estruturas verticais de telecomunicações?',opts:['Antenas de rádio','Superestruturas metálicas de aço galvanizado para suportar antenas','Cabos subterrâneos','Geradores de energia'],ok:1},
@@ -552,8 +552,7 @@ const DEFAULT_COURSES = [
   },
 ];
 
-localStorage.removeItem('caw_courses');
-let COURSES = DEFAULT_COURSES;
+let COURSES = JSON.parse(localStorage.getItem('caw_courses')) || DEFAULT_COURSES;
 function saveCourses(){ localStorage.setItem('caw_courses', JSON.stringify(COURSES)); }
 
 // ── USERS ─────────────────────────────────────────────────────────
