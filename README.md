@@ -531,23 +531,6 @@ const DEFAULT_COURSES = [
           {id:10,txt:'O radier é mais indicado para terrenos com:',opts:['Alta resistência e solo raso','Baixa resistência e camada de solo profunda','Solo rochoso','Terreno inclinado apenas'],ok:1}
         ]}
       },
-      { id:2, order:2, title:'Módulo 03 — Estruturas',
-        lessons:[
-          {id:1,title:'ESTRUTURAS',type:'pdf',url:'https://files.manuscdn.com/user_upload_by_module/session_file/310519663187515352/UoMQDqHObxcSjwtG.pdf',text:''}
-        ],
-        quiz:{ title:'Avaliação — Estruturas', minScore:7.0, maxAttempts:3, questions:[
-          {id:1,txt:'O que são as estruturas verticais de telecomunicações?',opts:['Antenas de rádio','Superestruturas metálicas de aço galvanizado para suportar antenas','Cabos subterrâneos','Geradores de energia'],ok:1},
-          {id:2,txt:'Quais são os três tipos de seção transversal de torres?',opts:['Redonda, oval e quadrada','Triangular, quadrada e poste','Circular, hexagonal e retangular','Triangular, pentagonal e quadrada'],ok:1},
-          {id:3,txt:'Qual tipo de torre tem menor poluição visual e rápida montagem?',opts:['Torre quadrada','Torre triangular','Poste','Torre estaiada'],ok:2},
-          {id:4,txt:'As torres autoportantes são sustentadas por:',opts:['Cabos e estais','A própria estrutura','Estacas no solo','Pilares externos'],ok:1},
-          {id:5,txt:'As torres estaiadas necessitam de:',opts:['Menor espaço para instalação','Bases para ancoragem dos cabos','Sempre serem triangulares','Apenas um parafuso'],ok:1},
-          {id:6,txt:'Quais são os tipos de base quanto à abertura?',opts:['Alta e baixa','Larga e estreita','Compacta e normal','Fixa e móvel'],ok:2},
-          {id:7,txt:'Quais são os 4 tipos de perfil utilizados nas torres?',opts:['Aço, ferro, alumínio e cobre','Cantoneira, tubo, barra maciça e chapa dobrada','Redondo, quadrado, oval e triangular','Liso, estriado, perfurado e ondulado'],ok:1},
-          {id:8,txt:'Qual a função das arruelas nas estruturas?',opts:['Servir como parafuso','Proteger as superfícies da peça e evitar contato direto com a porca','Sustentar a torre','Medir a altura da estrutura'],ok:1},
-          {id:9,txt:'Para reforço de torres com cantoneira e chapa dobrada, usa-se:',opts:['Instalar uma torre em volta','Duplicar a peça (montante existente + montante de reforço)','Adicionar cabos de aço','Trocar toda a estrutura'],ok:1},
-          {id:10,txt:'Qual norma trata das forças devidas ao vento em edificações?',opts:['NBR 6118','NBR 6122','NBR 6123/1988','NBR 16280'],ok:2}
-        ]}
-      },
     ]
   },
 ];
