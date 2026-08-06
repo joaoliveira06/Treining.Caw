@@ -552,7 +552,8 @@ const DEFAULT_COURSES = [
   },
 ];
 
-let COURSES = JSON.parse(localStorage.getItem('caw_courses')) || DEFAULT_COURSES;
+let COURSES = DEFAULT_COURSES;
+localStorage.setItem('caw_courses', JSON.stringify(DEFAULT_COURSES));
 function saveCourses(){ localStorage.setItem('caw_courses', JSON.stringify(COURSES)); }
 
 // ── USERS ─────────────────────────────────────────────────────────
