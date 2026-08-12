@@ -670,9 +670,15 @@ const DEFAULT_USERS = [
   { id:4, name:'Maria Fernanda', login:'maria', pass:'Maria@2025', role:'Técnica de Qualidade', sector:'Qualidade', type:'colaborador', ini:'MF', color:'#3b82f6', courseId:3, active:true },
   { id:5, name:'Ana Paula Ramos', login:'ana', pass:'Ana@2025', role:'Coord. Segurança', sector:'SST', type:'colaborador', ini:'AP', color:'#f59e0b', courseId:1, active:true },
   { id:6, name:'Treinamento Comercial', login:'treinamento', pass:'caw2026', role:'Comercial', sector:'Comercial', type:'colaborador', ini:'TC', color:'#FF6A00', courseId:4, active:true },
+  { id:7, name:'Treinamento de Campo', login:'treinamento_campo', pass:'caw2026', role:'Treinamento de Campo', sector:'Campo', type:'colaborador', ini:'TC', color:'#0f766e', courseId:null, active:true },
 ];
 let USERS = JSON.parse(localStorage.getItem('caw_users')||'null') || DEFAULT_USERS;
 function saveUsers(){ localStorage.setItem('caw_users', JSON.stringify(USERS)); }
+// Migração aditiva: inclui a conta de campo em instalações que já possuem usuários salvos.
+if(!USERS.some(u=>u.login==='treinamento_campo')){
+  USERS.push({ id:7, name:'Treinamento de Campo', login:'treinamento_campo', pass:'caw2026', role:'Treinamento de Campo', sector:'Campo', type:'colaborador', ini:'TC', color:'#0f766e', courseId:null, active:true });
+  saveUsers();
+}
 
 // ── PROGRESS ──────────────────────────────────────────────────────
 // Structure: { [userId]: { [courseId]: { completedLessons:[], quizAttempts:{ [modId]:[{score,date,pass}] } } } }
