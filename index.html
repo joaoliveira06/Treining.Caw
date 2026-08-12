@@ -586,7 +586,7 @@ const DEFAULT_COURSES = [
         ]}
       },
     ]
-  },,
+        },
 
   { id:5, title:'VISTORIA CAMPO', instructor:'C.A.W. Projetos e Consultoria', category:'Vistoria', ico:'📋', hours:8, minScore:7.0, maxAttempts:3, sequential:true,
     modules:[
@@ -662,7 +662,14 @@ const DEFAULT_COURSES = [
   }
 ];
 
-let COURSES = JSON.parse(localStorage.getItem('caw_courses')) || DEFAULT_COURSES;
+let COURSES = DEFAULT_COURSES;
+try {
+  const _savedCourses = localStorage.getItem('caw_courses');
+  if (_savedCourses) COURSES = JSON.parse(_savedCourses);
+} catch (_eCourses) {
+  localStorage.removeItem('caw_courses');
+  COURSES = DEFAULT_COURSES;
+}
 // Migração dos treinamentos: mantém RELATÓRIOS e inclui VISTORIA CAMPO.
 COURSES = [4,5].map(id=>DEFAULT_COURSES.find(c=>c.id===id)).filter(Boolean);
 localStorage.setItem('caw_courses', JSON.stringify(COURSES));
@@ -685,7 +692,14 @@ const DEFAULT_USERS = [
   { id:6, name:'Treinamento Comercial', login:'treinamento', pass:'caw2026', role:'Comercial', sector:'Comercial', type:'colaborador', ini:'TC', color:'#FF6A00', courseId:4, active:true },
   { id:7, name:'Treinamento de Campo', login:'treinamento_campo', pass:'caw2026', role:'Treinamento de Campo', sector:'Campo', type:'colaborador', ini:'TC', color:'#0f766e', courseId:5, active:true },
 ];
-let USERS = JSON.parse(localStorage.getItem('caw_users')||'null') || DEFAULT_USERS;
+var USERS = DEFAULT_USERS;
+try {
+  const _savedUsers = localStorage.getItem('caw_users');
+  if (_savedUsers) USERS = JSON.parse(_savedUsers);
+} catch (_eUsers) {
+  localStorage.removeItem('caw_users');
+  USERS = DEFAULT_USERS;
+}
 function saveUsers(){ localStorage.setItem('caw_users', JSON.stringify(USERS)); }
 // Limpeza dos usuários antigos: preserva somente as quatro contas autorizadas.
 const _allowedLogins = new Set(['hans','geraldo','treinamento','treinamento_campo']);
@@ -2171,10 +2185,10 @@ document.addEventListener('keydown',e=>{
   const supabaseUrl = 'https://cqhsbqnauovtghpujcdc.supabase.co'
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxaHNicW5hdW92dGdocHVqY2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NDYxMTksImV4cCI6MjA4NzUyMjExOX0.yH_9IMj2wS0JOHbSWM1IDBCyPnIre25_eLLQ3CUmnfw'
 
-  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+  const supabaseTreinamentos = window.supabase.createClient(supabaseUrl, supabaseKey)
 
   async function carregarTreinamentos() {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseTreinamentos
       .from('treinamentos')
       .select('*')
 
@@ -2221,14 +2235,14 @@ document.addEventListener('keydown',e=>{
 <script>
 
 
-  const supabase = window.supabase.createClient(
+  const supabaseResultados = window.supabase.createClient(
   "https://rffxvfvlsxzqpcgyybhp.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmZnh2ZnZsc3h6cXBjZ3l5YmhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjU1NDEsImV4cCI6MjA4ODgwMTU0MX0.kOBomjqIFQhrD5UyGbj9NWYGW0W0rakyWaQ1wRHMrbE"
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmZnh2ZnZsc3h6cXBjZ3l5YmhwIiwiaWF0IjoxNzczMjI1NTQxLCJleHAiOjIwODg4MDE1NDN9.kOBomjqIFQhrD5UyZbj9NWYGW0W0rakyWaQ1wRHMrbE"
       );
 
 async function salvarResultado(nome, treinamento, nota){
 
-const { data, error } = await supabase
+const { data, error } = await supabaseResultados
 .from("resultados")
 .insert([
 {
