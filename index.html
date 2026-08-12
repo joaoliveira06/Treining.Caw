@@ -464,66 +464,6 @@ let CU = null; // current user
 
 // ── COURSES ──────────────────────────────────────────────────────
 const DEFAULT_COURSES = [
-  { id:1, title:'NR-12: Segurança em Máquinas', instructor:'Eng. Carlos Mendes', category:'Segurança', ico:'⚙️', hours:16, minScore:7.0, maxAttempts:3, sequential:true,
-    modules:[
-      { id:1, order:1, title:'Fundamentos da NR-12',
-        lessons:[
-          {id:1,title:'Introdução à NR-12',type:'pdf',url:'',text:'A NR-12 estabelece os requisitos mínimos para prevenção de acidentes em máquinas e equipamentos industriais. É obrigatória para todos os setores que utilizem máquinas.'},
-          {id:2,title:'Zonas de Perigo e Risco',type:'video',url:'',text:'Identificação e classificação de zonas de perigo conforme a norma. Compreenda como mapear os riscos na sua área.'},
-        ],
-        quiz:{ title:'Avaliação — Módulo 1', minScore:7.0, maxAttempts:3, questions:[
-          {id:1,txt:'O que é considerado zona de perigo conforme a NR-12?',opts:['Área de manutenção','Local de descanso','Espaço com risco de acidente por parte móvel','Corredor de saída'],ok:2},
-          {id:2,txt:'A NR-12 se aplica a:',opts:['Apenas máquinas pesadas','Todos os equipamentos e máquinas industriais','Somente equipamentos elétricos','Apenas tornos CNC'],ok:1},
-        ]}
-      },
-      { id:2, order:2, title:'EPIs e Procedimentos de Bloqueio',
-        lessons:[
-          {id:3,title:'EPIs Obrigatórios',type:'pdf',url:'',text:'Equipamentos de proteção individual exigidos pela NR-12. Luvas, óculos, calçado de segurança e protetor auditivo são essenciais.'},
-          {id:4,title:'Lockout/Tagout',type:'pdf',url:'',text:'Procedimento de bloqueio e etiquetagem de energia para manutenção segura de máquinas.'},
-        ],
-        quiz:{ title:'Avaliação — Módulo 2', minScore:7.0, maxAttempts:3, questions:[
-          {id:1,txt:'Qual EPI é obrigatório para operadores de máquinas?',opts:['Apenas luvas','Luvas, óculos e calçado de segurança','Somente capacete','Nenhum EPI'],ok:1},
-          {id:2,txt:'Lockout/Tagout é um procedimento de:',opts:['Limpeza de máquinas','Bloqueio de energia para manutenção segura','Calibração de equipamentos','Registro de produção'],ok:1},
-        ]}
-      },
-    ]
-  },
-  { id:2, title:'Operação de Torno CNC', instructor:'Téc. Roberto Alves', category:'Técnico', ico:'🔩', hours:20, minScore:7.0, maxAttempts:3, sequential:true,
-    modules:[
-      { id:1, order:1, title:'Fundamentos do CNC',
-        lessons:[
-          {id:1,title:'Introdução ao CNC',type:'video',url:'',text:'Componentes, funcionamento e tipos de torno CNC utilizados na indústria.'},
-          {id:2,title:'Linguagem G-Code',type:'pdf',url:'',text:'Fundamentos de programação CNC: funções G e M, coordenadas e ciclos fixos.'},
-        ],
-        quiz:{ title:'Avaliação — Módulo 1', minScore:7.0, maxAttempts:3, questions:[
-          {id:1,txt:'O que é G-Code?',opts:['Sistema operacional','Linguagem de programação CNC','Software CAD','Protocolo de comunicação'],ok:1},
-        ]}
-      },
-      { id:2, order:2, title:'Operação Prática',
-        lessons:[
-          {id:3,title:'Configuração de Parâmetros',type:'pdf',url:'',text:'Definição de velocidade de corte, avanço e profundidade para diferentes materiais.'},
-          {id:4,title:'Usinagem Demonstrativa',type:'video',url:'',text:'Demonstração prática de usinagem de uma peça cilíndrica do zero ao produto acabado.'},
-        ],
-        quiz:{ title:'Avaliação — Módulo 2', minScore:7.0, maxAttempts:3, questions:[
-          {id:1,txt:'A velocidade do fuso no CNC é controlada pelo código:',opts:['G-code (G)','Velocidade (F)','Spindle speed (S)','Depth (D)'],ok:2},
-        ]}
-      },
-    ]
-  },
-  { id:3, title:'Gestão da Qualidade ISO 9001', instructor:'Esp. Carla Souza', category:'Qualidade', ico:'🏅', hours:12, minScore:7.0, maxAttempts:3, sequential:false,
-    modules:[
-      { id:1, order:1, title:'Princípios da ISO 9001',
-        lessons:[
-          {id:1,title:'Os 7 Princípios da Qualidade',type:'pdf',url:'',text:'Os sete princípios de gestão da qualidade conforme ISO 9001:2015: foco no cliente, liderança, engajamento, abordagem por processo, melhoria, decisão baseada em evidência e gestão de relacionamento.'},
-          {id:2,title:'Auditorias Internas',type:'video',url:'',text:'Como planejar e conduzir auditorias internas de qualidade com eficácia.'},
-        ],
-        quiz:{ title:'Avaliação Final', minScore:7.0, maxAttempts:3, questions:[
-          {id:1,txt:'Quantos princípios de gestão a ISO 9001:2015 define?',opts:['5','6','7','8'],ok:2},
-          {id:2,txt:'Qual princípio coloca o cliente como prioridade?',opts:['Liderança','Foco no cliente','Melhoria','Engajamento'],ok:1},
-        ]}
-      },
-    ]
-  },
   { id:4, title:'RELATÓRIOS', instructor:'C.A.W. Projetos e Consultoria', category:'Engenharia', ico:'🏗️', hours:4, minScore:7.0, maxAttempts:3, sequential:true,
     modules:[
       { id:1, order:1, title:'Módulo 02 — Fundação',
@@ -650,6 +590,11 @@ const DEFAULT_COURSES = [
 ];
 
 let COURSES = JSON.parse(localStorage.getItem('caw_courses')) || DEFAULT_COURSES;
+// Limpeza dos treinamentos antigos: mantém somente RELATÓRIOS (id 4).
+COURSES = COURSES.filter(c=>c.id===4);
+if(!COURSES.length) COURSES = DEFAULT_COURSES;
+else COURSES[0] = DEFAULT_COURSES[0];
+localStorage.setItem('caw_courses', JSON.stringify(COURSES));
 // Auto-cura: garante que o curso 4 (RELATÓRIOS) tenha todos os módulos atualizados
 const _defRel = DEFAULT_COURSES.find(c => c.id === 4);
 const _currRel = COURSES.find(c => c.id === 4);
@@ -666,19 +611,16 @@ function saveCourses(){ localStorage.setItem('caw_courses', JSON.stringify(COURS
 const DEFAULT_USERS = [
   { id:1, name:'Hans', login:'hans', pass:'Hans7411', role:'Diretor', sector:'Diretoria', type:'master', ini:'H', color:'#92400E', courseId:null, active:true },
   { id:2, name:'Geraldo Andrade', login:'geraldo', pass:'Ger@2025', role:'Gestor de T&D', sector:'Gestão', type:'gestor', ini:'GA', color:'#5B21B6', courseId:null, active:true },
-  { id:3, name:'João Silva', login:'joao', pass:'Joao@2025', role:'Operador CNC', sector:'Produção', type:'colaborador', ini:'JS', color:'#FF6A00', courseId:1, active:true },
-  { id:4, name:'Maria Fernanda', login:'maria', pass:'Maria@2025', role:'Técnica de Qualidade', sector:'Qualidade', type:'colaborador', ini:'MF', color:'#3b82f6', courseId:3, active:true },
-  { id:5, name:'Ana Paula Ramos', login:'ana', pass:'Ana@2025', role:'Coord. Segurança', sector:'SST', type:'colaborador', ini:'AP', color:'#f59e0b', courseId:1, active:true },
   { id:6, name:'Treinamento Comercial', login:'treinamento', pass:'caw2026', role:'Comercial', sector:'Comercial', type:'colaborador', ini:'TC', color:'#FF6A00', courseId:4, active:true },
   { id:7, name:'Treinamento de Campo', login:'treinamento_campo', pass:'caw2026', role:'Treinamento de Campo', sector:'Campo', type:'colaborador', ini:'TC', color:'#0f766e', courseId:null, active:true },
 ];
 let USERS = JSON.parse(localStorage.getItem('caw_users')||'null') || DEFAULT_USERS;
 function saveUsers(){ localStorage.setItem('caw_users', JSON.stringify(USERS)); }
-// Migração aditiva: inclui a conta de campo em instalações que já possuem usuários salvos.
-if(!USERS.some(u=>u.login==='treinamento_campo')){
-  USERS.push({ id:7, name:'Treinamento de Campo', login:'treinamento_campo', pass:'caw2026', role:'Treinamento de Campo', sector:'Campo', type:'colaborador', ini:'TC', color:'#0f766e', courseId:null, active:true });
-  saveUsers();
-}
+// Limpeza dos usuários antigos: preserva somente as quatro contas autorizadas.
+const _allowedLogins = new Set(['hans','geraldo','treinamento','treinamento_campo']);
+USERS = USERS.filter(u=>_allowedLogins.has(u.login));
+DEFAULT_USERS.forEach(def=>{ if(!USERS.some(u=>u.login===def.login)) USERS.push(def); });
+saveUsers();
 
 // ── PROGRESS ──────────────────────────────────────────────────────
 // Structure: { [userId]: { [courseId]: { completedLessons:[], quizAttempts:{ [modId]:[{score,date,pass}] } } } }
