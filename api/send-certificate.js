@@ -1,4 +1,5 @@
-const RECIPIENTS = ['hans.fidalgo@caw.com.br', 'joao.oliveira@caw.ind.br'];
+const RECIPIENTS = ['joaoparpitero2018@gmail.com'];
+
 
 function safe(value) {
   return String(value).replace(/[&<>]/g, function(char) {
