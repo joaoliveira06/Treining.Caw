@@ -1,4 +1,5 @@
-const RECIPIENTS = ['joaoparpitero2018@gmail.com'];
+const RECIPIENTS = ['certificadoscaw@gmail.com'];
+
 
 
 function safe(value) {
