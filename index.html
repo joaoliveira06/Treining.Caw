@@ -861,12 +861,42 @@ function openLogin(){ document.getElementById('loginModal').classList.add('open'
 function closeLogin(){ document.getElementById('loginModal').classList.remove('open'); }
 function demoLogin(u,p){ document.getElementById('loginUser').value=u; document.getElementById('loginPass').value=p; openLogin(); }
 
-function doLogin(){
+async function doLogin(){
   const u = document.getElementById('loginUser').value.trim().toLowerCase();
   const p = document.getElementById('loginPass').value;
-  const user = USERS.find(x=>(x.login===u||x.name.toLowerCase()===u) && x.pass===p && x.active);
-  if(user){ CU={...user}; closeLogin(); launchApp(); }
-  else { document.getElementById('loginErr').style.display='block'; }
+  const err = document.getElementById('loginErr');
+  err.style.display='none';
+
+  try {
+    const { data, error } = await supabaseResultados.rpc('login_caw', {
+      p_login: u,
+      p_pass: p
+    });
+
+    if(error) throw error;
+
+    const user = data && data[0];
+    if(!user){
+      err.style.display='block';
+      return;
+    }
+
+    CU = {
+      ...user,
+      courseId: user.courseId ?? user.courseid ?? null
+    };
+
+    // Mantém o usuário autenticado disponível para as telas atuais.
+    const idx = USERS.findIndex(x => x.login === CU.login);
+    if(idx >= 0) USERS[idx] = {...USERS[idx], ...CU};
+    else USERS.push(CU);
+
+    closeLogin();
+    launchApp();
+  } catch(e) {
+    console.error('Erro no login Supabase:', e);
+    err.style.display='block';
+  }
 }
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.getElementById('loginModal').classList.contains('open')) doLogin(); });
 
