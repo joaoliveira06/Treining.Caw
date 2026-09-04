@@ -1837,8 +1837,50 @@ function saveNewUser(){
       if(ps) u.pass=ps; saveUsers(); toast(`✅ Usuário "${nm}" atualizado!`); go('mUsers'); return; }
   }
 
-  USERS.push({ id:Date.now(),name:nm,login:lg,pass:ps,role:rl||'Colaborador',sector:sc||'Geral',type:tp,courseId:cid?Number(cid):null,ini,email:document.getElementById('eu-email')?.value||'',color:colors[USERS.length%colors.length],active:true });
-  saveUsers(); toast(`✅ Usuário "${nm}" cadastrado!`); go('mUsers');
+const novoUsuario = {
+  id: crypto.randomUUID(),
+  name: nm,
+  login: lg,
+  pass: ps,
+  role: rl || 'Colaborador',
+  sector: sc || 'Geral',
+  type: tp,
+  courseId: cid ? Number(cid) : null,
+  ini,
+  email: document.getElementById('eu-email')?.value || '',
+  color: colors[USERS.length % colors.length],
+  active: true
+};
+
+const { data, error } = await supabaseResultados
+  .from('users')
+  .insert([{
+    id: novoUsuario.id,
+    name: novoUsuario.name,
+    login: novoUsuario.login,
+    pass: novoUsuario.pass,
+    role: novoUsuario.role,
+    sector: novoUsuario.sector,
+    type: novoUsuario.type,
+    ini: novoUsuario.ini,
+    color: novoUsuario.color,
+    "courseId": novoUsuario.courseId,
+    active: novoUsuario.active
+  }])
+  .select()
+  .single();
+
+if (error) {
+  console.error('Erro ao cadastrar usuário:', error);
+  toast('❌ Erro ao salvar usuário no banco.');
+  return;
+}
+
+USERS.push({...novoUsuario, ...data});
+saveUsers();
+
+toast(`✅ Usuário "${nm}" cadastrado!`);
+go('mUsers');
 }
 
 /* ── MASTER: CURSOS ───────────────────────────────────────────── */
