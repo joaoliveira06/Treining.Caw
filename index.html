@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -867,38 +867,48 @@ async function doLogin(){
   const err = document.getElementById('loginErr');
   err.style.display='none';
 
-  try {
-    const { data, error } = await supabaseResultados.rpc('login_caw', {
-      p_login: u,
-      p_pass: p
-    });
+  // Tenta o banco principal e, se necessário, o segundo projeto já usado pelo site.
+  const clientes = [supabaseResultados];
+  if (typeof supabaseTreinamentos !== 'undefined') clientes.push(supabaseTreinamentos);
 
-    if(error) throw error;
+  let ultimoErro = null;
 
-    const user = data && data[0];
-    if(!user){
-      err.style.display='block';
+  for (const client of clientes) {
+    try {
+      const { data, error } = await client.rpc('login_caw', {
+        p_login: u,
+        p_pass: p
+      });
+
+      if (error) {
+        ultimoErro = error;
+        continue;
+      }
+
+      const user = data && data[0];
+      if (!user) continue;
+
+      CU = {
+        ...user,
+        courseId: user.courseId ?? user.courseid ?? null
+      };
+
+      const idx = USERS.findIndex(x => x.login === CU.login);
+      if(idx >= 0) USERS[idx] = {...USERS[idx], ...CU};
+      else USERS.push(CU);
+
+      closeLogin();
+      launchApp();
       return;
+    } catch(e) {
+      ultimoErro = e;
     }
-
-    CU = {
-      ...user,
-      courseId: user.courseId ?? user.courseid ?? null
-    };
-
-    // Mantém o usuário autenticado disponível para as telas atuais.
-    const idx = USERS.findIndex(x => x.login === CU.login);
-    if(idx >= 0) USERS[idx] = {...USERS[idx], ...CU};
-    else USERS.push(CU);
-
-    closeLogin();
-    launchApp();
-  } catch(e) {
-    console.error('Erro no login Supabase:', e);
-    err.style.display='block';
   }
+
+  console.error('Falha no login:', ultimoErro);
+  err.textContent = '❌ Credenciais inválidas.';
+  err.style.display='block';
 }
-document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.getElementById('loginModal').classList.contains('open')) doLogin(); });
 
 function launchApp(){
   document.getElementById('landing').style.display='none';
