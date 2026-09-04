@@ -1809,7 +1809,7 @@ function selectAccess(type){
   if(badge){ badge.className='abadge '+{master:'ab-master',gestor:'ab-gestor',colaborador:'ab-colab'}[type]; badge.textContent={master:'Master',gestor:'Gestor',colaborador:'Colaborador'}[type]; }
 }
 
-function saveNewUser(){
+async function saveNewUser(){
   const nm=document.getElementById('eu-name').value.trim();
   const lg=document.getElementById('eu-login').value.trim().toLowerCase();
   const ps=document.getElementById('eu-pass').value;
