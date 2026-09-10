@@ -1643,12 +1643,13 @@ async function toggleUser(id){
   const u=USERS.find(x=>x.id===id); if(!u) return;
   const novoStatus = !u.active;
 
-const { error } = await supabaseResultados
-  .from('users')
-  .update({ active: novoStatus })
-  .eq('id', id);
+const { data: alterado, error } = await supabaseResultados
+  .rpc('alterar_status_usuario_caw', {
+    p_id: id,
+    p_active: novoStatus
+  });
 
-if (error) {
+if (error || !alterado) {
   console.error('Erro ao alterar status:', error);
   toast('❌ Erro ao alterar status do usuário.');
   return;
