@@ -1884,16 +1884,24 @@ if(editId){
     dadosAtualizados.pass = ps;
   }
 
-  const { error } = await supabaseResultados
-    .from('users')
-    .update(dadosAtualizados)
-    .eq('id', editId);
+const { data: editado, error } = await supabaseResultados
+  .rpc('editar_usuario_caw', {
+    p_id: editId,
+    p_name: dadosAtualizados.name,
+    p_login: dadosAtualizados.login,
+    p_role: dadosAtualizados.role,
+    p_sector: dadosAtualizados.sector,
+    p_type: dadosAtualizados.type,
+    p_course_id: dadosAtualizados.courseId,
+    p_ini: dadosAtualizados.ini,
+    p_pass: dadosAtualizados.pass || null
+  });
 
-  if(error){
-    console.error('Erro ao atualizar usuário:', error);
-    toast('❌ Erro ao atualizar usuário.');
-    return;
-  }
+if (error || !editado) {
+  console.error('Erro ao atualizar usuário:', error);
+  toast('❌ Erro ao atualizar usuário.');
+  return;
+}
 
   Object.assign(u, dadosAtualizados);
 
