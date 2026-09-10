@@ -1862,12 +1862,47 @@ async function saveNewUser(){
   const c=COURSES.find(x=>x.id==cid);
   const ini=nm.split(' ').filter(Boolean).map(w=>w[0]).join('').substring(0,2).toUpperCase();
   const colors=['#FF6A00','#3b82f6','#8b5cf6','#f59e0b','#10b981','#ef4444'];
+if(editId){
+  const u=USERS.find(x=>String(x.id)===String(editId));
 
-  if(editId){
-    const u=USERS.find(x=>x.id==editId);
-    if(u){ Object.assign(u,{name:nm,login:lg,role:rl,sector:sc,type:tp,courseId:cid?Number(cid):null,ini,email:document.getElementById('eu-email')?.value||''});
-      if(ps) u.pass=ps; saveUsers(); toast(`✅ Usuário "${nm}" atualizado!`); go('mUsers'); return; }
+  if(!u){
+    toast('❌ Usuário não encontrado.');
+    return;
   }
+
+  const dadosAtualizados = {
+    name: nm,
+    login: lg,
+    role: rl || 'Colaborador',
+    sector: sc || 'Geral',
+    type: tp,
+    courseId: cid ? Number(cid) : null,
+    ini,
+    email: document.getElementById('eu-email')?.value || ''
+  };
+
+  if(ps){
+    dadosAtualizados.pass = ps;
+  }
+
+  const { error } = await supabaseResultados
+    .from('users')
+    .update(dadosAtualizados)
+    .eq('id', editId);
+
+  if(error){
+    console.error('Erro ao atualizar usuário:', error);
+    toast('❌ Erro ao atualizar usuário.');
+    return;
+  }
+
+  Object.assign(u, dadosAtualizados);
+
+  saveUsers();
+  toast(`✅ Usuário "${nm}" atualizado!`);
+  go('mUsers');
+  return;
+}
 
 const novoUsuario = {
   id: crypto.randomUUID(),
