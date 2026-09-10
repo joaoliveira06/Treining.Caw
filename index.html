@@ -1191,11 +1191,27 @@ function showLesson(cid,mid,lid){
   </div>`;
 }
 
-function markLessonDone(cid,mid,lid){
-  const prog=getProgress(CU.id,cid);
-  const key=`${mid}-${lid}`;
-  if(!prog.completedLessons.includes(key)) prog.completedLessons.push(key);
-  saveProgress();
+async function markLessonDone(cid,mid,lid){
+const prog=getProgress(CU.id,cid);
+const key=`${mid}-${lid}`;
+
+if(!prog.completedLessons.includes(key)){
+  const { error } = await supabaseResultados
+    .rpc('registrar_aula_concluida_caw', {
+      p_user_id: CU.id,
+      p_course_id: cid,
+      p_module_id: String(mid),
+      p_lesson_id: String(lid)
+    });
+
+  if(error){
+    console.error('Erro ao registrar aula:', error);
+    toast('❌ Erro ao salvar conclusão da aula.');
+    return;
+  }
+
+  prog.completedLessons.push(key);
+}
   toast('✅ Aula concluída!');
   courseViewer(); // refresh to unlock next items
   // Redireciona diretamente para a prova do módulo assim que concluir a aula
