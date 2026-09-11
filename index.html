@@ -1227,15 +1227,34 @@ if(!prog.completedLessons.includes(key)){
 ════════════════════════════════════════════════════════════════ */
 let _activeQuiz=null;
 
-function showQuiz(cid,mid){
+async function showQuiz(cid,mid){
   const c=COURSES.find(x=>x.id===cid);
   const m=c?.modules?.find(x=>x.id===mid);
   const quiz=m?.quiz; if(!quiz) return;
   document.querySelectorAll('.lr').forEach(e=>e.classList.remove('active'));
   document.getElementById(`vq-${mid}`)?.classList.add('active');
 
-  const prog=getProgress(CU.id,cid);
-  const atts=prog.quizAttempts[mid]||[];
+  const { data: tentativasBanco, error } = await supabaseResultados
+  .rpc('listar_tentativas_caw', {
+    p_user_id: CU.id,
+    p_course_id: cid,
+    p_module_id: String(mid)
+  });
+
+if(error){
+  console.error('Erro ao carregar tentativas:', error);
+  toast('❌ Erro ao carregar suas tentativas.');
+  return;
+}
+
+const atts = (tentativasBanco || []).map(a => ({
+  score: Number(a.score),
+  pass: a.passed,
+  correct: a.correct,
+  total: a.total,
+  date: a.attempted_at,
+  attemptNumber: a.attempt_number
+}));
   const maxAtt=quiz.maxAttempts||3;
   const attLeft=maxAtt-atts.length;
   const passed=atts.some(a=>a.pass);
@@ -1290,30 +1309,66 @@ function selOpt(qId,oi){
   if(el) el.textContent=`${answered}/${total} respondidas`;
 }
 
-function submitQuiz(){
+async function submitQuiz(){
   const aq=_activeQuiz; if(!aq||aq.submitted) return;
   const {cid,mid,quiz}=aq;
-  if(Object.keys(aq.answers).length<quiz.questions.length){ toast('⚠️ Responda todas as questões antes de finalizar.'); return; }
+
+  if(Object.keys(aq.answers).length<quiz.questions.length){
+    toast('⚠️ Responda todas as questões antes de finalizar.');
+    return;
+  }
+
   aq.submitted=true;
+
   let cor=0;
+
   quiz.questions.forEach(q=>{
     const ans=aq.answers[q.id];
+
     q.opts.forEach((_,oi)=>{
-      const el=document.getElementById(`qopt-${q.id}-${oi}`); if(!el) return;
+      const el=document.getElementById(`qopt-${q.id}-${oi}`);
+      if(!el) return;
+
       el.classList.remove('sel');
+
       if(oi===q.ok) el.classList.add('ok');
       else if(oi===ans&&ans!==q.ok) el.classList.add('err');
     });
+
     if(ans===q.ok) cor++;
   });
+
   const score=+(cor/quiz.questions.length*10).toFixed(1);
   const pass=score>=quiz.minScore;
-  const prog=getProgress(CU.id,cid);
-  if(!prog.quizAttempts[mid]) prog.quizAttempts[mid]=[];
-  const att={ score, pass, correct:cor, total:quiz.questions.length, date:new Date().toISOString() };
-  prog.quizAttempts[mid].push(att);
-  saveProgress();
-  showQuizResult(cid,mid,att,prog.quizAttempts[mid]);
+
+  const { data: attemptNumber, error } = await supabaseResultados
+    .rpc('registrar_tentativa_caw', {
+      p_user_id: CU.id,
+      p_course_id: cid,
+      p_module_id: String(mid),
+      p_score: score,
+      p_correct: cor,
+      p_total: quiz.questions.length,
+      p_passed: pass
+    });
+
+  if(error){
+    console.error('Erro ao registrar tentativa:', error);
+    aq.submitted=false;
+    toast('❌ Erro ao salvar a tentativa da prova.');
+    return;
+  }
+
+  const att={
+    score,
+    pass,
+    correct:cor,
+    total:quiz.questions.length,
+    date:new Date().toISOString(),
+    attemptNumber
+  };
+
+  showQuizResult(cid,mid,att,[att]);
 }
 
 function showQuizResult(cid,mid,lastAtt,allAtts){
