@@ -840,8 +840,7 @@ function isModuleLessonsDone(uid, cid, m){
   return m.lessons.every(l=>isLessonDone(uid,cid,m.id,l.id));
 }
 function isModulePassed(uid, cid, mid){
-  const atts = getProgress(uid,cid).quizAttempts[mid]||[];
-  return atts.some(a=>a.pass);
+  return APROVACOES_CURSO[cid]?.[mid] === true;
 }
 function isCourseComplete(uid, cid){
   const c=COURSES.find(x=>x.id===cid); if(!c) return false;
@@ -852,6 +851,31 @@ function courseProgress(uid, cid){
   const totalLessons=c.modules.reduce((s,m)=>s+m.lessons.length,0);
   const doneLessons=getProgress(uid,cid).completedLessons.length;
   return totalLessons?Math.round(doneLessons/totalLessons*100):0;
+}
+
+let APROVACOES_CURSO = {};
+
+async function carregarTentativasCurso(uid, cid){
+  const { data, error } = await supabaseResultados
+    .rpc('listar_tentativas_curso_caw', {
+      p_user_id: uid,
+      p_course_id: cid
+    });
+
+  if(error){
+    console.error('Erro ao carregar aprovações do curso:', error);
+    return {};
+  }
+
+  const resultado = {};
+
+  (data || []).forEach(x => {
+    resultado[x.module_order] = x.passed === true;
+  });
+
+  APROVACOES_CURSO[cid] = resultado;
+
+  return resultado;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -910,9 +934,12 @@ async function doLogin(){
   err.style.display='block';
 }
 
-function launchApp(){
+async function launchApp(){
   document.getElementById('landing').style.display='none';
   document.getElementById('app').style.display='block';
+  if(CU.courseId){
+  await carregarTentativasCurso(CU.id, CU.courseId);
+}
   document.getElementById('uNm').textContent=CU.name;
   const tl={master:'Master',gestor:'Gestor',colaborador:'Colaborador'}[CU.type]||CU.type;
   document.getElementById('uRl').textContent=tl+' · '+(CU.sector||'—');
