@@ -1368,7 +1368,29 @@ async function submitQuiz(){
     attemptNumber
   };
 
+  const { data: historicoBanco, error: erroHistorico } = await supabaseResultados
+  .rpc('listar_tentativas_caw', {
+    p_user_id: CU.id,
+    p_course_id: cid,
+    p_module_id: String(mid)
+  });
+
+if(erroHistorico){
+  console.error('Erro ao carregar histórico:', erroHistorico);
   showQuizResult(cid,mid,att,[att]);
+  return;
+}
+
+const allAtts = (historicoBanco || []).map(a => ({
+  score: Number(a.score),
+  pass: a.passed,
+  correct: a.correct,
+  total: a.total,
+  date: a.attempted_at,
+  attemptNumber: a.attempt_number
+}));
+
+showQuizResult(cid,mid,att,allAtts);
 }
 
 function showQuizResult(cid,mid,lastAtt,allAtts){
