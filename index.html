@@ -849,7 +849,10 @@ function isCourseComplete(uid, cid){
 function courseProgress(uid, cid){
   const c=COURSES.find(x=>x.id===cid); if(!c) return 0;
   const totalLessons=c.modules.reduce((s,m)=>s+m.lessons.length,0);
-  const doneLessons=getProgress(uid,cid).completedLessons.length;
+const doneLessons=c.modules.reduce(
+  (s,m)=>s+m.lessons.filter(l=>isLessonDone(uid,cid,m.id,l.id)).length,
+  0
+);
   return totalLessons?Math.round(doneLessons/totalLessons*100):0;
 }
 
