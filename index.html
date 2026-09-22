@@ -1417,6 +1417,9 @@ const allAtts = (historicoBanco || []).map(a => ({
   attemptNumber: a.attempt_number
 }));
 
+APROVACOES_CURSO[cid] = APROVACOES_CURSO[cid] || {};
+APROVACOES_CURSO[cid][mid] = pass;
+
 showQuizResult(cid,mid,att,allAtts);
 }
 
