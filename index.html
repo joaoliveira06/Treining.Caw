@@ -2399,16 +2399,49 @@ function base64ToBlobUrl(base64) {
 }
 
 async function lessonFileChosen(lid,input){
-  const file=input.files[0]; if(!file) return;
+  const file=input.files[0];
+  if(!file) return;
+
   try {
-    const base64 = await fileToBase64(file);
-    input._base64Data = base64;
+    toast('⏳ Enviando PDF...');
+
+    const nomeSeguro = file.name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-zA-Z0-9._-]/g,'_');
+
+    const caminho = `${Date.now()}-${crypto.randomUUID()}-${nomeSeguro}`;
+
+    const { error: uploadError } = await supabaseResultados
+      .storage
+      .from('course-pdfs')
+      .upload(caminho, file, {
+        contentType: 'application/pdf',
+        upsert: false
+      });
+
+    if(uploadError){
+      console.error('Erro ao enviar PDF:', uploadError);
+      toast('❌ Erro ao enviar PDF.');
+      return;
+    }
+
+    const { data: publicData } = supabaseResultados
+      .storage
+      .from('course-pdfs')
+      .getPublicUrl(caminho);
+
+    input._base64Data = publicData.publicUrl;
+
     const el=document.getElementById('lf-'+lid);
-    if(el) el.textContent='✅ '+file.name+' ('+(file.size/1024/1024).toFixed(1)+'MB)';
-    toast('✅ '+file.name+' carregado!');
+    if(el){
+      el.textContent='✅ '+file.name;
+    }
+
+    toast('✅ PDF enviado para o Supabase!');
   } catch(err) {
-    toast('❌ Erro ao carregar arquivo');
-    console.error(err);
+    console.error('Erro ao carregar PDF:', err);
+    toast('❌ Erro ao carregar PDF.');
   }
 }
 
