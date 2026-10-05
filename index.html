@@ -2431,7 +2431,7 @@ async function lessonFileChosen(lid,input){
       .from('course-pdfs')
       .getPublicUrl(caminho);
 
-    input._base64Data = publicData.publicUrl;
+    input.dataset.storageUrl = publicData.publicUrl;
 
     const el=document.getElementById('lf-'+lid);
     if(el){
@@ -2510,7 +2510,7 @@ async function saveCourse(){
       const lurl=document.getElementById('lurl-'+lid)?.value?.trim()||'';
       const fileInput=lel.querySelector('input[type=file]');
       const type=fileInput?(fileInput.accept.includes('video')?'video':'pdf'):'link';
-      const url=fileInput?._base64Data||lurl;
+      const url=fileInput?.dataset.storageUrl||lurl;
       lessons.push({id:li+1,title:ltitle,type,url,text:ldesc});
     });
 
