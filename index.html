@@ -1287,18 +1287,7 @@ function showLesson(cid,mid,lid){
         pdfSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(l.url)}&embedded=true`;
       }
 
-      mediaHtml = `
-      <div class="pdf-protected" oncontextmenu="return false">
-        <iframe src="${pdfSrc}${isBase64 ? '#toolbar=0&navpanes=0&scrollbar=1&view=FitH' : ''}" 
-                style="width:100%;height:100%;border:none" 
-                allow="autoplay">
-          <object data="${l.url}" type="application/pdf" style="width:100%;height:100%">
-            <p>Seu navegador não suporta a visualização direta de PDFs. 
-            <a href="${l.url}" target="_blank">Clique aqui para abrir o arquivo</a>.</p>
-          </object>
-        </iframe>
-        <div class="pdf-toolbar-block"></div>
-      </div>
+      
       <div class="pdfrow">
         <div class="pdfrow-ico">🔒</div>
         <div class="pdfrow-info"><h4>${l.title}</h4><p>Visualização protegida — download não disponível</p></div>
