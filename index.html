@@ -876,6 +876,30 @@ async function carregarCursosDoSupabase(){
 
   console.log('Cursos carregados do Supabase:', COURSES);
 }
+async function migrarQuizzesAntigosParaSupabase(){
+
+  const cursosParaMigrar = DEFAULT_COURSES.filter(
+    c => c.id === 4 || c.id === 5
+  );
+
+  for(const curso of cursosParaMigrar){
+
+    const { error } = await supabaseResultados
+      .rpc('migrar_quizzes_caw', {
+        p_course_id: curso.id,
+        p_quizzes: curso.modules
+      });
+
+    if(error){
+      console.error(`Erro ao migrar provas do curso ${curso.id}:`, error);
+      return;
+    }
+
+    console.log(`✅ Provas migradas: ${curso.title}`);
+  }
+
+  console.log('✅ Migração das provas concluída.');
+}
 
 // ── USERS ─────────────────────────────────────────────────────────
 const DEFAULT_USERS = [
@@ -1053,6 +1077,7 @@ if(CU.courseId){
   document.getElementById('uAv').style.background=CU.color||'#666';
 
   await carregarCursosDoSupabase();
+await migrarQuizzesAntigosParaSupabase();
 
   buildSidebar();
   if(CU.type==='master') go('mDash');
