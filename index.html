@@ -876,6 +876,101 @@ async function carregarCursosDoSupabase(){
 
   console.log('Cursos carregados do Supabase:', COURSES);
 }
+async function migrarPDFsAntigosParaSupabase(){
+
+  const cursos = DEFAULT_COURSES.filter(
+    c => c.id === 4 || c.id === 5
+  );
+
+  for(const curso of cursos){
+
+    for(const modulo of curso.modules){
+
+      for(const aula of modulo.lessons){
+
+        if(aula.type !== 'pdf' || !aula.url) continue;
+
+        // Já foi migrado para o Storage
+        if(aula.url.includes('/storage/v1/object/public/course-pdfs/')){
+          continue;
+        }
+
+        try {
+
+          toast(`⏳ Migrando PDF: ${aula.title}`);
+
+          const resposta = await fetch(aula.url);
+
+          if(!resposta.ok){
+            console.error('Erro ao baixar PDF:', aula.url, resposta.status);
+            continue;
+          }
+
+          const blob = await resposta.blob();
+
+          const nomeSeguro = aula.title
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g,'')
+            .replace(/[^a-zA-Z0-9]/g,'_');
+
+          const caminho =
+            `${curso.id}/${modulo.order}-${aula.id}-${nomeSeguro}.pdf`;
+
+          const { error: uploadError } =
+            await supabaseResultados
+              .storage
+              .from('course-pdfs')
+              .upload(caminho, blob, {
+                contentType: 'application/pdf',
+                upsert: true
+              });
+
+          if(uploadError){
+            console.error('Erro no upload:', uploadError);
+            continue;
+          }
+
+          const { data: publicData } =
+            supabaseResultados
+              .storage
+              .from('course-pdfs')
+              .getPublicUrl(caminho);
+
+          const novaUrl = publicData.publicUrl;
+
+          const { error: updateError } =
+            await supabaseResultados
+              .rpc('atualizar_url_aula_caw', {
+                p_course_id: curso.id,
+                p_module_order: modulo.order,
+                p_lesson_order: aula.id,
+                p_url: novaUrl
+              });
+
+          if(updateError){
+            console.error('Erro ao atualizar URL da aula:', updateError);
+            continue;
+          }
+
+          console.log(
+            `✅ PDF migrado: ${curso.title} → ${aula.title}`
+          );
+
+        } catch(err){
+
+          console.error(
+            `Erro ao migrar ${curso.title} / ${aula.title}:`,
+            err
+          );
+
+        }
+      }
+    }
+  }
+
+  toast('✅ Migração dos PDFs concluída!');
+  console.log('✅ Todos os PDFs migrados.');
+}
 async function migrarQuizzesAntigosParaSupabase(){
 
   const cursosParaMigrar = DEFAULT_COURSES.filter(
@@ -1076,10 +1171,13 @@ if(CU.courseId){
   document.getElementById('uAv').textContent=CU.ini||CU.name[0];
   document.getElementById('uAv').style.background=CU.color||'#666';
 
-  await carregarCursosDoSupabase();
+await carregarCursosDoSupabase();
+
 await migrarQuizzesAntigosParaSupabase();
 
-  buildSidebar();
+await migrarPDFsAntigosParaSupabase();
+
+buildSidebar();
   if(CU.type==='master') go('mDash');
   else if(CU.type==='gestor') go('gDash');
   else go('dashboard');
