@@ -799,6 +799,32 @@ if (_currRel && _defRel && _currRel.modules.length < _defRel.modules.length) {
   localStorage.setItem('caw_courses', JSON.stringify(DEFAULT_COURSES));
 }
 function saveCourses(){ localStorage.setItem('caw_courses', JSON.stringify(COURSES)); }
+async function carregarCursosDoSupabase(){
+  const { data, error } = await supabaseResultados
+    .rpc('listar_cursos_caw');
+
+  if(error){
+    console.error('Erro ao carregar cursos:', error);
+    toast('❌ Erro ao carregar cursos do Supabase.');
+    return;
+  }
+
+  COURSES = (data || []).map(c => ({
+    id: c.id,
+    title: c.title,
+    instructor: c.instructor,
+    category: c.category || 'Geral',
+    ico: c.ico || '📚',
+    hours: c.hours || 0,
+    minScore: Number(c.minScore ?? 7),
+    maxAttempts: Number(c.maxAttempts ?? 3),
+    sequential: c.sequential === true,
+    desc: c.description || '',
+    modules: c.modules || []
+  }));
+
+  console.log('Cursos carregados do Supabase:', COURSES);
+}
 
 // ── USERS ─────────────────────────────────────────────────────────
 const DEFAULT_USERS = [
@@ -974,6 +1000,9 @@ if(CU.courseId){
   document.getElementById('uRl').textContent=tl+' · '+(CU.sector||'—');
   document.getElementById('uAv').textContent=CU.ini||CU.name[0];
   document.getElementById('uAv').style.background=CU.color||'#666';
+
+  await carregarCursosDoSupabase();
+
   buildSidebar();
   if(CU.type==='master') go('mDash');
   else if(CU.type==='gestor') go('gDash');
