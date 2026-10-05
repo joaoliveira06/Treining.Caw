@@ -2485,8 +2485,8 @@ function addQuestion(mid,prefill){
   }
 }
 
-function saveCourse(){
-  const title=document.getElementById('nc-title')?.value?.trim();
+async function saveCourse(){
+    const title=document.getElementById('nc-title')?.value?.trim();
   const inst=document.getElementById('nc-inst')?.value?.trim();
   if(!title||!inst){ toast('⚠️ Preencha Título e Instrutor.'); return; }
   const mEls=document.querySelectorAll('.module-block');
@@ -2541,12 +2541,65 @@ function saveCourse(){
     modules,
   };
 
-  if(editId){
-    const idx=COURSES.findIndex(c=>c.id==editId);
-    if(idx>-1){ COURSES[idx]={...COURSES[idx],...courseData}; saveCourses(); toast(`✅ Curso "${title}" atualizado!`); go('mCourses'); return; }
+if(editId){
+  const id=Number(editId);
+
+  const { error } = await supabaseResultados
+    .rpc('salvar_curso_caw', {
+      p_id: id,
+      p_title: title,
+      p_instructor: inst,
+      p_category: courseData.category,
+      p_ico: courseData.ico,
+      p_hours: courseData.hours,
+      p_min_score: courseData.minScore,
+      p_max_attempts: courseData.maxAttempts,
+      p_sequential: courseData.sequential,
+      p_description: courseData.desc,
+      p_modules: courseData.modules
+    });
+
+  if(error){
+    console.error('Erro ao salvar curso:', error);
+    toast('❌ Erro ao salvar curso no Supabase.');
+    return;
   }
-  COURSES.push({id:Date.now(),...courseData}); saveCourses();
-  toast(`✅ Curso "${title}" criado com ${modules.length} módulo(s)!`); go('mCourses');
+
+  const idx=COURSES.findIndex(c=>c.id==id);
+  if(idx>-1) COURSES[idx]={...COURSES[idx],...courseData};
+
+  toast(`✅ Curso "${title}" atualizado no Supabase!`);
+  go('mCourses');
+  return;
+}
+
+const id=Date.now();
+
+const { error } = await supabaseResultados
+  .rpc('salvar_curso_caw', {
+    p_id: id,
+    p_title: title,
+    p_instructor: inst,
+    p_category: courseData.category,
+    p_ico: courseData.ico,
+    p_hours: courseData.hours,
+    p_min_score: courseData.minScore,
+    p_max_attempts: courseData.maxAttempts,
+    p_sequential: courseData.sequential,
+    p_description: courseData.desc,
+    p_modules: courseData.modules
+  });
+
+if(error){
+  console.error('Erro ao criar curso:', error);
+  toast('❌ Erro ao criar curso no Supabase.');
+  return;
+}
+
+COURSES.push({id,...courseData});
+
+toast(`✅ Curso "${title}" criado no Supabase com ${modules.length} módulo(s)!`);
+go('mCourses');
 }
 
 /* ── MASTER: RELATÓRIOS ───────────────────────────────────────── */
