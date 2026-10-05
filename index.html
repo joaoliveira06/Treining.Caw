@@ -1287,7 +1287,18 @@ function showLesson(cid,mid,lid){
         pdfSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(l.url)}&embedded=true`;
       }
 
-      
+      mediaHtml = `
+      <div class="pdf-protected" oncontextmenu="return false">
+        <iframe src="${pdfSrc}${isBase64 ? '#toolbar=0&navpanes=0&scrollbar=1&view=FitH' : ''}" 
+                style="width:100%;height:100%;border:none" 
+                allow="autoplay">
+          <object data="${l.url}" type="application/pdf" style="width:100%;height:100%">
+            <p>Seu navegador não suporta a visualização direta de PDFs. 
+            <a href="${l.url}" target="_blank">Clique aqui para abrir o arquivo</a>.</p>
+          </object>
+        </iframe>
+        <div class="pdf-toolbar-block"></div>
+      </div>
       <div class="pdfrow">
         <div class="pdfrow-ico">🔒</div>
         <div class="pdfrow-info"><h4>${l.title}</h4><p>Visualização protegida — download não disponível</p></div>
@@ -1317,38 +1328,33 @@ function showLesson(cid,mid,lid){
 }
 
 async function markLessonDone(cid,mid,lid){
+const prog=getProgress(CU.id,cid);
+const key=`${mid}-${lid}`;
 
-  const prog = getProgress(CU.id,cid);
-  const key = `${mid}-${lid}`;
+if(!prog.completedLessons.includes(key)){
+  const { error } = await supabaseResultados
+    .rpc('registrar_aula_concluida_caw', {
+      p_user_id: CU.id,
+      p_course_id: cid,
+      p_module_id: String(mid),
+      p_lesson_id: String(lid)
+    });
 
-  if(!prog.completedLessons.includes(key)){
-
-    const { error } = await supabaseResultados
-      .rpc('registrar_aula_concluida_caw', {
-        p_user_id: CU.id,
-        p_course_id: cid,
-        p_module_id: String(mid),
-        p_lesson_id: String(lid)
-      });
-
-    if(error){
-      console.error('Erro ao registrar aula:', error);
-      toast('❌ Erro ao salvar conclusão da aula.');
-      return;
-    }
-
-    prog.completedLessons.push(key);
+  if(error){
+    console.error('Erro ao registrar aula:', error);
+    toast('❌ Erro ao salvar conclusão da aula.');
+    return;
   }
 
+  prog.completedLessons.push(key);
+}
   toast('✅ Aula concluída!');
-
-  const c = COURSES.find(x => x.id === cid);
-  const m = c?.modules?.find(x => x.id === mid);
-
+  courseViewer(); // refresh to unlock next items
+  // Redireciona diretamente para a prova do módulo assim que concluir a aula
+  const c=COURSES.find(x=>x.id===cid);
+  const m=c?.modules?.find(x=>x.id===mid);
   if(m && m.quiz && isModuleLessonsDone(CU.id,cid,m)){
     showQuiz(cid,mid);
-  } else {
-    courseViewer();
   }
 }
 
