@@ -882,6 +882,9 @@ async function migrarPDFsAntigosParaSupabase(){
     c => c.id === 4 || c.id === 5
   );
 
+  let migrados = 0;
+  let erros = 0;
+
   for(const curso of cursos){
 
     for(const modulo of curso.modules){
@@ -890,7 +893,7 @@ async function migrarPDFsAntigosParaSupabase(){
 
         if(aula.type !== 'pdf' || !aula.url) continue;
 
-        // Já foi migrado para o Storage
+        // Já está no Storage
         if(aula.url.includes('/storage/v1/object/public/course-pdfs/')){
           continue;
         }
@@ -899,62 +902,36 @@ async function migrarPDFsAntigosParaSupabase(){
 
           toast(`⏳ Migrando PDF: ${aula.title}`);
 
-          const resposta = await fetch(aula.url);
+          const resposta = await fetch('/api/migrar-pdfs', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              cursoId: curso.id,
+              moduleOrder: modulo.order,
+              lessonOrder: aula.id,
+              pdfUrl: aula.url
+            })
+          });
 
-          if(!resposta.ok){
-            console.error('Erro ao baixar PDF:', aula.url, resposta.status);
-            continue;
-          }
+          const resultado = await resposta.json();
 
-          const blob = await resposta.blob();
-
-          const nomeSeguro = aula.title
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g,'')
-            .replace(/[^a-zA-Z0-9]/g,'_');
-
-          const caminho =
-            `${curso.id}/${modulo.order}-${aula.id}-${nomeSeguro}.pdf`;
-
-          const { error: uploadError } =
-            await supabaseResultados
-              .storage
-              .from('course-pdfs')
-              .upload(caminho, blob, {
-                contentType: 'application/pdf',
-                upsert: true
-              });
-
-          if(uploadError){
-            console.error('Erro no upload:', uploadError);
-            continue;
-          }
-
-          const { data: publicData } =
-            supabaseResultados
-              .storage
-              .from('course-pdfs')
-              .getPublicUrl(caminho);
-
-          const novaUrl = publicData.publicUrl;
-
-          const { error: updateError } =
-            await supabaseResultados
-              .rpc('atualizar_url_aula_caw', {
-                p_course_id: curso.id,
-                p_module_order: modulo.order,
-                p_lesson_order: aula.id,
-                p_url: novaUrl
-              });
-
-          if(updateError){
-            console.error('Erro ao atualizar URL da aula:', updateError);
+          if(!resposta.ok || !resultado.sucesso){
+            console.error(
+              `Erro ao migrar ${curso.title} → ${aula.title}:`,
+              resultado
+            );
+            erros++;
             continue;
           }
 
           console.log(
-            `✅ PDF migrado: ${curso.title} → ${aula.title}`
+            `✅ PDF migrado: ${curso.title} → ${aula.title}`,
+            resultado.url
           );
+
+          migrados++;
 
         } catch(err){
 
@@ -963,13 +940,16 @@ async function migrarPDFsAntigosParaSupabase(){
             err
           );
 
+          erros++;
         }
       }
     }
   }
 
-  toast('✅ Migração dos PDFs concluída!');
-  console.log('✅ Todos os PDFs migrados.');
+  toast(`✅ Migração concluída! ${migrados} migrados · ${erros} erros`);
+
+  console.log(`✅ PDFs migrados: ${migrados}`);
+  console.log(`❌ PDFs com erro: ${erros}`);
 }
 async function migrarQuizzesAntigosParaSupabase(){
 
