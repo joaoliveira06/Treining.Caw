@@ -878,7 +878,7 @@ async function carregarCursosDoSupabase(){
 }
 async function migrarPDFsAntigosParaSupabase(){
 
-  const cursos = DEFAULT_COURSES.filter(
+  const cursos = COURSES.filter(
     c => c.id === 4 || c.id === 5
   );
 
