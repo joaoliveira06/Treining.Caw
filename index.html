@@ -800,28 +800,79 @@ if (_currRel && _defRel && _currRel.modules.length < _defRel.modules.length) {
 }
 function saveCourses(){ localStorage.setItem('caw_courses', JSON.stringify(COURSES)); }
 async function carregarCursosDoSupabase(){
-  const { data, error } = await supabaseResultados
-    .rpc('listar_cursos_caw');
 
-  if(error){
-    console.error('Erro ao carregar cursos:', error);
+  const { data: cursos, error: erroCursos } =
+    await supabaseResultados.rpc('listar_cursos_caw');
+
+  if(erroCursos){
+    console.error('Erro ao carregar cursos:', erroCursos);
     toast('❌ Erro ao carregar cursos do Supabase.');
     return;
   }
 
-  COURSES = (data || []).map(c => ({
-    id: c.id,
-    title: c.title,
-    instructor: c.instructor,
-    category: c.category || 'Geral',
-    ico: c.ico || '📚',
-    hours: c.hours || 0,
-    minScore: Number(c.minScore ?? 7),
-    maxAttempts: Number(c.maxAttempts ?? 3),
-    sequential: c.sequential === true,
-    desc: c.description || '',
-    modules: c.modules || []
-  }));
+  const { data: estruturas, error: erroEstruturas } =
+    await supabaseResultados.rpc('listar_estrutura_cursos_caw');
+
+  if(erroEstruturas){
+    console.error('Erro ao carregar módulos:', erroEstruturas);
+    toast('❌ Erro ao carregar módulos dos cursos.');
+    return;
+  }
+
+  const estruturaMap = {};
+  (estruturas || []).forEach(e => {
+    estruturaMap[e.course_id] = e.modules || [];
+  });
+
+  COURSES = (cursos || []).map(c => {
+
+    let modules = c.modules || [];
+
+    // Se o curso não tiver módulos dentro de courses.modules,
+    // usa os módulos reais da tabela modules.
+    if(!modules.length && estruturaMap[c.id]){
+      modules = estruturaMap[c.id];
+    }
+
+    // Recupera os quizzes antigos do código apenas para cursos
+    // que possuem a estrutura de módulos no banco, mas não os quizzes.
+    const original = DEFAULT_COURSES.find(x => x.id === c.id);
+
+    if(original){
+      modules = modules.map(m => {
+
+        const originalMod = original.modules?.find(
+          om => Number(om.order) === Number(m.order)
+        );
+
+        return {
+          ...m,
+          quiz: m.quiz || originalMod?.quiz || {
+            title: `Avaliação — ${m.title}`,
+            minScore: Number(c.minScore ?? 7),
+            maxAttempts: Number(c.maxAttempts ?? 3),
+            questions: []
+          }
+        };
+
+      });
+    }
+
+    return {
+      id: c.id,
+      title: c.title,
+      instructor: c.instructor,
+      category: c.category || 'Geral',
+      ico: c.ico || '📚',
+      hours: c.hours || 0,
+      minScore: Number(c.minScore ?? 7),
+      maxAttempts: Number(c.maxAttempts ?? 3),
+      sequential: c.sequential === true,
+      desc: c.description || '',
+      modules
+    };
+
+  });
 
   console.log('Cursos carregados do Supabase:', COURSES);
 }
