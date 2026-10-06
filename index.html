@@ -2110,7 +2110,7 @@ function gReports(){
           <td><div style="display:flex;align-items:center;gap:8px"><div class="pb" style="width:80px;margin:0"><div class="pbf" style="width:${pct}%"></div></div><span style="font-size:12px;font-weight:700;color:var(--or)">${pct}%</span></div></td>
           <td>${c?`${passed}/${c.modules.length} módulos`:'—'}</td>
           <td><span class="bdg ${done?'bdg-ok':pct>0?'bdg-tag':'bdg-off'}">${done?'Concluído':pct>0?'Em andamento':'Não iniciado'}</span></td>
-          <td style="text-align:right">${done?`<button class="b-sm" onclick="viewUserCert(${u.id},${c.id})">🎓 Certificado</button>`:'—'}</td>
+          <td style="text-align:right">${done?`<button class="b-sm" onclick='viewUserCert(${JSON.stringify(u.id)},${c.id})'>🎓 Certificado</button>`:'—'}</td>
         </tr>`;}).join('')}
       </tbody>
     </table></div>
@@ -3064,7 +3064,7 @@ function mReports(){
         <td><div style="display:flex;align-items:center;gap:8px"><div class="pb" style="width:80px;margin:0"><div class="pbf" style="width:${pct}%"></div></div><span style="font-size:12px;font-weight:700;color:var(--or)">${pct}%</span></div></td>
         <td><strong style="color:${parseFloat(best)>=(c?.minScore||7)?'var(--ok)':'var(--err)'}">${best}</strong></td>
         <td><span class="bdg ${done?'bdg-ok':pct>0?'bdg-tag':'bdg-off'}">${done?'Concluído':pct>0?'Em andamento':'Não iniciado'}</span></td>
-        <td style="text-align:right">${done?`<button class="b-sm" onclick="viewUserCert(${u.id},${c.id})">🎓 Certificado</button>`:'—'}</td>
+        <td style="text-align:right">${done?`<button class="b-sm" onclick='viewUserCert(${JSON.stringify(u.id)},${c.id})'>🎓 Certificado</button>`:'—'}</td>
       </tr>`;}).join('')}
     </tbody>
   </table></div></div>`);
