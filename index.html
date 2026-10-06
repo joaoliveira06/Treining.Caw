@@ -2121,7 +2121,20 @@ function gReports(){
    MASTER PAGES
 ════════════════════════════════════════════════════════════════ */
 async function mDash(){
-  const colabors=USERS.filter(u=>u.type==='colaborador'&&u.active);
+
+  const { data: usuariosBanco, error: erroUsuarios } =
+    await supabaseResultados.rpc('listar_usuarios_caw');
+
+  if(erroUsuarios){
+    console.error('Erro ao carregar usuários:', erroUsuarios);
+  } else if(usuariosBanco){
+    USERS = usuariosBanco;
+  }
+
+  const colabors=USERS.filter(
+    u=>u.type==='colaborador'&&u.active
+  );
+
   await Promise.all(
   colabors.map(async u => {
     if(u.courseId){
