@@ -1846,45 +1846,157 @@ function printCert(){
   setTimeout(()=>document.getElementById('printArea').style.display='none',1000);
 }
 
-function viewUserCert(uid, cid){
+async function viewUserCert(uid, cid){
+
   if(CU.type !== 'master' && CU.type !== 'gestor'){
     toast('⛔ Acesso negado. Apenas Master e Gestor podem visualizar certificados de terceiros.');
     return;
   }
-  const u=USERS.find(x=>x.id===uid);
-  const c=COURSES.find(x=>x.id===cid);
+
+  const u = USERS.find(x => x.id === uid);
+  const c = COURSES.find(x => x.id === cid);
+
   if(!u || !c) return;
-  const avgScores=c.modules.map(m=>{
-    const atts=(getProgress(uid,cid).quizAttempts[m.id]||[]);
-    const best=atts.reduce((b,a)=>a.score>b.score?a:b,{score:0});
-    return best.score;
-  }).filter(s=>s>0);
-  const avg=avgScores.length?+(avgScores.reduce((a,b)=>a+b,0)/avgScores.length).toFixed(1):0;
-  const certHtml=`
-  <div class="cert" id="certBlock">
-    <div style="display:flex;align-items:center;justify-content:center;margin-bottom:30px;position:relative">
-      <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663187515352/DIIBAXsmwNKjxaBJ.png" style="height:65px;width:auto;object-fit:contain;" alt="CAW Logo">
-    </div>
-    <div class="cert-h1" style="margin-top:5px;">Certificado de Conclusão</div>
-    <div class="cert-h2">Este documento certifica que</div>
-    <div class="cert-nm">${u.name}</div>
-    <div class="cert-bd">concluiu com êxito o curso técnico</div>
-    <div class="cert-cs">${c.title}</div>
-    <div style="font-size:13px;color:var(--t2);margin-bottom:28px">Carga Horária: ${c.hours}h · Nota Final: ${avg} · ${c.modules.length} módulo(s)</div>
-    <div class="cert-ft">
-      <div class="csig"><div class="csln"></div><div class="cssn">Hans</div><div class="cssr">Diretor · CAW Industrial</div></div>
-      <div style="text-align:center">
-        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px">Data de Conclusão</div>
-        <div style="font-weight:800;font-size:14px;color:var(--t1);margin-top:2px">${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+
+  try {
+
+    toast('⏳ Carregando certificado...');
+
+    const resultados = await Promise.all(
+
+      c.modules.map(async m => {
+
+        const { data, error } = await supabaseResultados
+          .rpc('listar_tentativas_caw', {
+            p_user_id: uid,
+            p_course_id: cid,
+            p_module_id: String(m.id)
+          });
+
+        if(error){
+          console.error(
+            `Erro ao carregar tentativas do módulo ${m.id}:`,
+            error
+          );
+          return [];
+        }
+
+        return data || [];
+      })
+
+    );
+
+    const tentativas = resultados.flat();
+
+    const melhoresNotas = c.modules.map(m => {
+
+      const atts = tentativas
+        .filter(a => Number(a.module_order) === Number(m.id))
+        .map(a => Number(a.score))
+        .filter(score => !Number.isNaN(score));
+
+      return atts.length ? Math.max(...atts) : 0;
+
+    }).filter(score => score > 0);
+
+    const avg = melhoresNotas.length
+      ? +(melhoresNotas.reduce((a,b) => a+b, 0) / melhoresNotas.length).toFixed(1)
+      : 0;
+
+    const certHtml = `
+    <div class="cert" id="certBlock">
+
+      <div style="display:flex;align-items:center;justify-content:center;margin-bottom:30px;position:relative">
+        <img
+          src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663187515352/DIIBAXsmwNKjxaBJ.png"
+          style="height:65px;width:auto;object-fit:contain;"
+          alt="CAW Logo">
       </div>
-      <div class="csig"><div class="csln"></div><div class="cssn">Geraldo Andrade</div><div class="cssr">Gestor de T&D</div></div>
-    </div>
-  </div>`;
-  page('Visualização de Certificado',`Relatórios — ${u.name}`,`
-  <div style="display:flex;justify-content:center;padding:20px">${certHtml}</div>`,
-  `<button class="btn b-gh" onclick="go('${CU.type==='master'?'mReports':'gReports'}')">← Voltar</button>
-   <button class="btn b-or" onclick="printCert()">🖨 Imprimir / Baixar</button>`);
-  document.getElementById('printArea').innerHTML=certHtml;
+
+      <div class="cert-h1" style="margin-top:5px;">
+        Certificado de Conclusão
+      </div>
+
+      <div class="cert-h2">
+        Este documento certifica que
+      </div>
+
+      <div class="cert-nm">
+        ${u.name}
+      </div>
+
+      <div class="cert-bd">
+        concluiu com êxito o curso técnico
+      </div>
+
+      <div class="cert-cs">
+        ${c.title}
+      </div>
+
+      <div style="font-size:13px;color:var(--t2);margin-bottom:28px">
+        Carga Horária: ${c.hours}h · Nota Final: ${avg.toFixed(1)} · ${c.modules.length} módulo(s)
+      </div>
+
+      <div class="cert-ft">
+
+        <div class="csig">
+          <div class="csln"></div>
+          <div class="cssn">Hans</div>
+          <div class="cssr">Diretor · CAW Industrial</div>
+        </div>
+
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px">
+            Data de Conclusão
+          </div>
+
+          <div style="font-weight:800;font-size:14px;color:var(--t1);margin-top:2px">
+            ${new Date().toLocaleDateString('pt-BR',{
+              day:'2-digit',
+              month:'long',
+              year:'numeric'
+            })}
+          </div>
+        </div>
+
+        <div class="csig">
+          <div class="csln"></div>
+          <div class="cssn">Geraldo Andrade</div>
+          <div class="cssr">Gestor de T&D</div>
+        </div>
+
+      </div>
+    </div>`;
+
+    page(
+      'Visualização de Certificado',
+      `${c.title} — ${u.name}`,
+      `
+      <div style="display:flex;justify-content:center;padding:20px">
+        ${certHtml}
+      </div>
+      `,
+      `
+      <button class="btn b-gh"
+        onclick="go('${CU.type==='master'?'mReports':'gReports'}')">
+        ← Voltar
+      </button>
+
+      <button class="btn b-or"
+        onclick="printCert()">
+        🖨 Imprimir / Baixar
+      </button>
+      `
+    );
+
+    document.getElementById('printArea').innerHTML = certHtml;
+
+  } catch(err) {
+
+    console.error('Erro ao visualizar certificado:', err);
+    toast('❌ Erro ao carregar certificado.');
+
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
