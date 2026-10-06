@@ -980,7 +980,6 @@ async function migrarQuizzesAntigosParaSupabase(){
 // ── USERS ─────────────────────────────────────────────────────────
 const DEFAULT_USERS = [
   { id:1, name:'Hans', login:'hans', pass:'Hans7411', role:'Diretor', sector:'Diretoria', type:'master', ini:'H', color:'#92400E', courseId:null, active:true },
-  { id:2, name:'Geraldo Andrade', login:'geraldo', pass:'Ger@2025', role:'Gestor de T&D', sector:'Gestão', type:'gestor', ini:'GA', color:'#5B21B6', courseId:null, active:true },
   { id:6, name:'Treinamento Comercial', login:'treinamento', pass:'caw2026', role:'Comercial', sector:'Comercial', type:'colaborador', ini:'TC', color:'#FF6A00', courseId:4, active:true },
   { id:7, name:'Treinamento de Campo', login:'treinamento_campo', pass:'caw2026', role:'Treinamento de Campo', sector:'Campo', type:'colaborador', ini:'TC', color:'#0f766e', courseId:5, active:true },
 ];
@@ -994,7 +993,7 @@ try {
 }
 function saveUsers(){ localStorage.setItem('caw_users', JSON.stringify(USERS)); }
 // Limpeza dos usuários antigos: preserva somente as quatro contas autorizadas.
-const _allowedLogins = new Set(['hans','geraldo','treinamento','treinamento_campo']);
+const _allowedLogins = new Set(['hans','treinamento','treinamento_campo']);
 USERS = USERS.filter(u=>_allowedLogins.has(u.login));
 DEFAULT_USERS.forEach(def=>{ if(!USERS.some(u=>u.login===def.login)) USERS.push(def); });
 saveUsers();
@@ -1819,7 +1818,7 @@ async function certificate(){
     const { data: certificadoExistente, error: erroConsulta } =
       await supabaseResultados
         .from('certificates_caw')
-        .select('certificate_name, issued_at')
+        .select('certificate_name, issued_at, average_score')
         .eq('user_id', CU.id)
         .eq('course_id', cid)
         .maybeSingle();
@@ -1854,7 +1853,7 @@ async function certificate(){
             course_id: cid,
             certificate_name: certificateName
           })
-          .select('certificate_name, issued_at')
+          .select('certificate_name, issued_at, average_score')
           .single();
 
       if(erroSalvar){
@@ -1866,7 +1865,7 @@ async function certificate(){
           const { data: certificadoRecuperado, error: erroRecuperar } =
             await supabaseResultados
               .from('certificates_caw')
-              .select('certificate_name, issued_at')
+              .select('certificate_name, issued_at, average_score')
               .eq('user_id', CU.id)
               .eq('course_id', cid)
               .single();
@@ -1923,25 +1922,36 @@ async function certificate(){
 
     );
 
-    const notasValidas = melhoresNotas.filter(n => n > 0);
+    let avg;
 
-    const avg = notasValidas.length
-      ? +(
-          notasValidas.reduce((a,b) => a + b, 0) /
-          notasValidas.length
-        ).toFixed(1)
-      : 0;
-      if(!certificadoExistente){
-  const { error: erroNota } = await supabaseResultados
-    .from('certificates_caw')
-    .update({
-      average_score: avg
-    })
-    .eq('user_id', CU.id)
-    .eq('course_id', cid);
+if(certificadoExistente && Number.isFinite(Number(certificadoExistente.average_score))){
 
-  if(erroNota){
-    console.error('Erro ao salvar nota do certificado:', erroNota);
+  avg = Number(certificadoExistente.average_score);
+
+} else {
+
+  const notasValidas = melhoresNotas.filter(n => n > 0);
+
+  avg = notasValidas.length
+    ? +(
+        notasValidas.reduce((a,b) => a + b, 0) /
+        notasValidas.length
+      ).toFixed(1)
+    : 0;
+
+  if(certificadoNovo){
+
+    const { error: erroNota } = await supabaseResultados
+      .from('certificates_caw')
+      .update({
+        average_score: avg
+      })
+      .eq('user_id', CU.id)
+      .eq('course_id', cid);
+
+    if(erroNota){
+      console.error('Erro ao salvar nota do certificado:', erroNota);
+    }
   }
 }
 
@@ -1981,36 +1991,30 @@ async function certificate(){
 
       <div class="cert-ft">
 
-        <div class="csig">
-          <div class="csln"></div>
-          <div class="cssn">Hans</div>
-          <div class="cssr">Diretor · CAW Industrial</div>
-        </div>
+  <div class="csig">
+    <img
+      src="hans-assinatura.png"
+      alt="Assinatura Hans"
+      style="width:150px;height:auto;display:block;margin:0 auto 4px;object-fit:contain;">
+    <div class="cssn">Hans</div>
+    <div class="cssr">Diretor · CAW Industrial</div>
+  </div>
 
-        <div style="text-align:center">
+  <div style="text-align:center">
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px">
+      Data de Conclusão
+    </div>
 
-          <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px">
-            Data de Conclusão
-          </div>
+    <div style="font-weight:800;font-size:14px;color:var(--t1);margin-top:2px">
+      ${new Date(certificateIssuedAt).toLocaleDateString('pt-BR',{
+        day:'2-digit',
+        month:'long',
+        year:'numeric'
+      })}
+    </div>
+  </div>
 
-          <div style="font-weight:800;font-size:14px;color:var(--t1);margin-top:2px">
-            ${new Date(certificateIssuedAt).toLocaleDateString('pt-BR',{
-              day:'2-digit',
-              month:'long',
-              year:'numeric'
-            })}
-          </div>
-
-        </div>
-
-        <div class="csig">
-          <div class="csln"></div>
-          <div class="cssn">Geraldo Andrade</div>
-          <div class="cssr">Gestor de T&D</div>
-        </div>
-
-      </div>
-    </div>`;
+</div>`;
 
     document.getElementById('main').innerHTML = `
     <div class="pgh">
@@ -2198,36 +2202,30 @@ async function viewUserCert(uid, cid){
 
       <div class="cert-ft">
 
-        <div class="csig">
-          <div class="csln"></div>
-          <div class="cssn">Hans</div>
-          <div class="cssr">Diretor · CAW Industrial</div>
-        </div>
+  <div class="csig">
+    <img
+      src="hans-assinatura.png"
+      alt="Assinatura Hans"
+      style="width:150px;height:auto;display:block;margin:0 auto 4px;object-fit:contain;">
+    <div class="cssn">Hans</div>
+    <div class="cssr">Diretor · CAW Industrial</div>
+  </div>
 
-        <div style="text-align:center">
+  <div style="text-align:center">
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px">
+      Data de Conclusão
+    </div>
 
-          <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px">
-            Data de Conclusão
-          </div>
+    <div style="font-weight:800;font-size:14px;color:var(--t1);margin-top:2px">
+      ${new Date(certificateIssuedAt).toLocaleDateString('pt-BR',{
+        day:'2-digit',
+        month:'long',
+        year:'numeric'
+      })}
+    </div>
+  </div>
 
-          <div style="font-weight:800;font-size:14px;color:var(--t1);margin-top:2px">
-            ${new Date(certificateIssuedAt).toLocaleDateString('pt-BR',{
-              day:'2-digit',
-              month:'long',
-              year:'numeric'
-            })}
-          </div>
-
-        </div>
-
-        <div class="csig">
-          <div class="csln"></div>
-          <div class="cssn">Geraldo Andrade</div>
-          <div class="cssr">Gestor de T&D</div>
-        </div>
-
-      </div>
-    </div>`;
+</div>`;
 
     page(
       'Visualização de Certificado',
