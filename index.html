@@ -1471,6 +1471,12 @@ if(!prog.completedLessons.includes(key)){
   }
 
   prog.completedLessons.push(key);
+  
+  if(!CONCLUSOES_CURSO[cid]){
+  CONCLUSOES_CURSO[cid] = {};
+}
+
+CONCLUSOES_CURSO[cid][key] = true;
 }
   toast('✅ Aula concluída!');
   courseViewer(); // refresh to unlock next items
