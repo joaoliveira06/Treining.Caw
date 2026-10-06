@@ -1010,14 +1010,73 @@ function getProgress(uid, cid){
   return PROGRESS[uid][cid];
 }
 
+async function carregarProgressoUsuarioParaMaster(uid,cid){
+
+  if(!PROGRESS[uid]){
+    PROGRESS[uid]={};
+  }
+
+  PROGRESS[uid][cid]={
+    completedLessons:[],
+    quizAttempts:{}
+  };
+
+  const { data: aulas, error: erroAulas } =
+    await supabaseResultados.rpc(
+      'listar_progresso_curso_caw',
+      {
+        p_user_id: uid,
+        p_course_id: cid
+      }
+    );
+
+  if(erroAulas){
+    console.error('Erro ao carregar progresso:', erroAulas);
+    return;
+  }
+
+  PROGRESS[uid][cid].completedLessons =
+    (aulas || [])
+      .filter(a => a.completed)
+      .map(a => `${a.module_order}-${a.lesson_order}`);
+
+  const { data: provas, error: erroProvas } =
+    await supabaseResultados.rpc(
+      'listar_tentativas_curso_caw',
+      {
+        p_user_id: uid,
+        p_course_id: cid
+      }
+    );
+
+  if(erroProvas){
+    console.error('Erro ao carregar aprovações:', erroProvas);
+    return;
+  }
+
+  (provas || []).forEach(p => {
+
+    if(!PROGRESS[uid][cid].quizAttempts[p.module_order]){
+      PROGRESS[uid][cid].quizAttempts[p.module_order]=[];
+    }
+
+    PROGRESS[uid][cid].quizAttempts[p.module_order].push({
+      pass: p.passed === true
+    });
+
+  });
+}
+
 function isLessonDone(uid, cid, mid, lid){
-  return CONCLUSOES_CURSO[cid]?.[`${mid}-${lid}`] === true;
+  return PROGRESS[uid]?.[cid]?.completedLessons
+    ?.includes(`${mid}-${lid}`) === true;
 }
 function isModuleLessonsDone(uid, cid, m){
   return m.lessons.every(l=>isLessonDone(uid,cid,m.id,l.id));
 }
 function isModulePassed(uid, cid, mid){
-  return APROVACOES_CURSO[cid]?.[mid] === true;
+  return PROGRESS[uid]?.[cid]?.quizAttempts?.[mid]
+    ?.some(a => a.pass === true) === true;
 }
 function isCourseComplete(uid, cid){
   const c=COURSES.find(x=>x.id===cid); if(!c) return false;
@@ -1038,6 +1097,18 @@ let APROVACOES_CURSO = {};
 let CONCLUSOES_CURSO = {};
 
 async function carregarTentativasCurso(uid, cid){
+
+  if(!PROGRESS[uid]){
+    PROGRESS[uid] = {};
+  }
+
+  if(!PROGRESS[uid][cid]){
+    PROGRESS[uid][cid] = {
+      completedLessons: [],
+      quizAttempts: {}
+    };
+  }
+
   const { data, error } = await supabaseResultados
     .rpc('listar_tentativas_curso_caw', {
       p_user_id: uid,
@@ -1049,18 +1120,36 @@ async function carregarTentativasCurso(uid, cid){
     return {};
   }
 
-  const resultado = {};
+  PROGRESS[uid][cid].quizAttempts = {};
 
   (data || []).forEach(x => {
-    resultado[x.module_order] = x.passed === true;
+
+    if(!PROGRESS[uid][cid].quizAttempts[x.module_order]){
+      PROGRESS[uid][cid].quizAttempts[x.module_order] = [];
+    }
+
+    PROGRESS[uid][cid].quizAttempts[x.module_order].push({
+      pass: x.passed === true
+    });
+
   });
 
-  APROVACOES_CURSO[cid] = resultado;
-
-  return resultado;
+  return PROGRESS[uid][cid].quizAttempts;
 }
 
 async function carregarConclusoesCurso(uid, cid){
+
+  if(!PROGRESS[uid]){
+    PROGRESS[uid] = {};
+  }
+
+  if(!PROGRESS[uid][cid]){
+    PROGRESS[uid][cid] = {
+      completedLessons: [],
+      quizAttempts: {}
+    };
+  }
+
   const { data, error } = await supabaseResultados
     .rpc('listar_progresso_curso_caw', {
       p_user_id: uid,
@@ -1072,15 +1161,12 @@ async function carregarConclusoesCurso(uid, cid){
     return {};
   }
 
-  const resultado = {};
+  PROGRESS[uid][cid].completedLessons =
+    (data || [])
+      .filter(x => x.completed === true)
+      .map(x => `${x.module_order}-${x.lesson_order}`);
 
-  (data || []).forEach(x => {
-    resultado[`${x.module_order}-${x.lesson_order}`] = x.completed === true;
-  });
-
-  CONCLUSOES_CURSO[cid] = resultado;
-
-  return resultado;
+  return PROGRESS[uid][cid].completedLessons;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1471,7 +1557,7 @@ if(!prog.completedLessons.includes(key)){
   }
 
   prog.completedLessons.push(key);
-  
+
   if(!CONCLUSOES_CURSO[cid]){
   CONCLUSOES_CURSO[cid] = {};
 }
@@ -1922,8 +2008,15 @@ function gReports(){
 /* ════════════════════════════════════════════════════════════════
    MASTER PAGES
 ════════════════════════════════════════════════════════════════ */
-function mDash(){
+async function mDash(){
   const colabors=USERS.filter(u=>u.type==='colaborador'&&u.active);
+  await Promise.all(
+  colabors.map(async u => {
+    if(u.courseId){
+      await carregarProgressoUsuarioParaMaster(u.id,u.courseId);
+    }
+  })
+);
   page('Dashboard Master','Controle total da plataforma',`
   <div class="krow">
     <div class="kpi"><div class="kico">👥</div><div class="kval">${USERS.length}</div><div class="klbl">Total Usuários</div></div>
