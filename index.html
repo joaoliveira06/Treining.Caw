@@ -2240,6 +2240,214 @@ async function viewUserCert(uid, cid){
 
   }
 }
+async function viewUserGrades(uid, cid){
+
+  if(CU.type !== 'master'){
+    toast('⛔ Apenas o Master pode visualizar todas as notas.');
+    return;
+  }
+
+  const u = USERS.find(x => x.id === uid);
+  const c = COURSES.find(x => x.id === cid);
+
+  if(!u || !c){
+    toast('❌ Usuário ou curso não encontrado.');
+    return;
+  }
+
+  try {
+
+    toast('⏳ Carregando histórico de provas...');
+
+    const resultados = await Promise.all(
+
+      c.modules.map(async m => {
+
+        const { data, error } =
+          await supabaseResultados
+            .rpc('listar_tentativas_caw', {
+              p_user_id: uid,
+              p_course_id: cid,
+              p_module_id: String(m.id)
+            });
+
+        if(error){
+          console.error(
+            `Erro ao carregar tentativas do módulo ${m.id}:`,
+            error
+          );
+
+          return {
+            module: m,
+            attempts: []
+          };
+        }
+
+        return {
+          module: m,
+          attempts: data || []
+        };
+
+      })
+
+    );
+
+    const totalTentativas = resultados.reduce(
+      (s,r) => s + r.attempts.length,
+      0
+    );
+
+    const linhas = resultados.flatMap(({module, attempts}) =>
+
+      attempts.map((a,i) => {
+
+        const score = Number(a.score);
+        const correct = Number(a.correct);
+        const total = Number(a.total);
+
+        const dataTentativa =
+          a.attempted_at ||
+          a.date ||
+          a.created_at;
+
+        return `
+        <tr>
+
+          <td>
+            <strong style="color:var(--t1)">
+              ${module.title}
+            </strong>
+          </td>
+
+          <td>
+            #${a.attempt_number || i + 1}
+          </td>
+
+          <td>
+            <strong
+              style="color:${Number.isFinite(score) && score >= (c.minScore || 7)
+                ? 'var(--ok)'
+                : 'var(--err)'}">
+              ${Number.isFinite(score) ? score.toFixed(1) : '—'}
+            </strong>
+          </td>
+
+          <td>
+            ${Number.isFinite(correct) && Number.isFinite(total)
+              ? `${correct}/${total}`
+              : '—'}
+          </td>
+
+          <td>
+            <span class="bdg ${
+              a.passed === true || a.pass === true
+                ? 'bdg-ok'
+                : 'bdg-off'
+            }">
+              ${
+                a.passed === true || a.pass === true
+                  ? 'Aprovado'
+                  : 'Reprovado'
+              }
+            </span>
+          </td>
+
+          <td>
+            ${
+              dataTentativa
+                ? new Date(dataTentativa).toLocaleDateString('pt-BR')
+                : '—'
+            }
+          </td>
+
+        </tr>`;
+      })
+
+    ).join('');
+
+    page(
+      'Notas das Avaliações',
+      `${u.name} — ${c.title}`,
+      `
+      <div style="margin-bottom:18px">
+
+        <div class="krow">
+
+          <div class="kpi">
+            <div class="kico">📝</div>
+            <div class="kval">${totalTentativas}</div>
+            <div class="klbl">Total de Tentativas</div>
+          </div>
+
+          <div class="kpi">
+            <div class="kico">📦</div>
+            <div class="kval">${c.modules.length}</div>
+            <div class="klbl">Módulos</div>
+          </div>
+
+        </div>
+
+        <div class="cht">
+
+          <div class="chtt">
+            Histórico de Provas — ${u.name}
+          </div>
+
+          <div style="overflow-x:auto">
+
+            <table class="tbl">
+
+              <thead>
+                <tr>
+                  <th>Módulo</th>
+                  <th>Tentativa</th>
+                  <th>Nota</th>
+                  <th>Acertos</th>
+                  <th>Status</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+
+              <tbody>
+
+                ${
+                  linhas ||
+                  `
+                  <tr>
+                    <td colspan="6"
+                        style="text-align:center;padding:30px;color:var(--t3)">
+                      Nenhuma tentativa registrada.
+                    </td>
+                  </tr>
+                  `
+                }
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </div>
+      `,
+      `
+      <button
+        class="btn b-gh"
+        onclick="go('mReports')">
+        ← Voltar
+      </button>
+      `
+    );
+
+  } catch(err){
+
+    console.error('Erro ao visualizar notas:', err);
+    toast('❌ Erro ao carregar notas.');
+
+  }
+}
 
 /* ════════════════════════════════════════════════════════════════
    RANKING
@@ -2352,7 +2560,25 @@ function gReports(){
           <td><div style="display:flex;align-items:center;gap:8px"><div class="pb" style="width:80px;margin:0"><div class="pbf" style="width:${pct}%"></div></div><span style="font-size:12px;font-weight:700;color:var(--or)">${pct}%</span></div></td>
           <td>${c?`${passed}/${c.modules.length} módulos`:'—'}</td>
           <td><span class="bdg ${done?'bdg-ok':pct>0?'bdg-tag':'bdg-off'}">${done?'Concluído':pct>0?'Em andamento':'Não iniciado'}</span></td>
-          <td style="text-align:right">${done?`<button class="b-sm" onclick='viewUserCert(${JSON.stringify(u.id)},${c.id})'>🎓 Certificado</button>`:'—'}</td>
+          <td style="text-align:right">${c ? `
+  <div style="display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap">
+
+    <button
+      class="b-sm"
+      onclick='viewUserGrades(${JSON.stringify(u.id)},${c.id})'>
+      📋 Ver Notas
+    </button>
+
+    ${done ? `
+      <button
+        class="b-sm"
+        onclick='viewUserCert(${JSON.stringify(u.id)},${c.id})'>
+        🎓 Certificado
+      </button>
+    ` : ''}
+
+  </div>
+` : '—'}
         </tr>`;}).join('')}
       </tbody>
     </table></div>
@@ -3306,7 +3532,25 @@ function mReports(){
         <td><div style="display:flex;align-items:center;gap:8px"><div class="pb" style="width:80px;margin:0"><div class="pbf" style="width:${pct}%"></div></div><span style="font-size:12px;font-weight:700;color:var(--or)">${pct}%</span></div></td>
         <td><strong style="color:${parseFloat(best)>=(c?.minScore||7)?'var(--ok)':'var(--err)'}">${best}</strong></td>
         <td><span class="bdg ${done?'bdg-ok':pct>0?'bdg-tag':'bdg-off'}">${done?'Concluído':pct>0?'Em andamento':'Não iniciado'}</span></td>
-        <td style="text-align:right">${done?`<button class="b-sm" onclick='viewUserCert(${JSON.stringify(u.id)},${c.id})'>🎓 Certificado</button>`:'—'}</td>
+        <td style="text-align:right">${c ? `
+  <div style="display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap">
+
+    <button
+      class="b-sm"
+      onclick='viewUserGrades(${JSON.stringify(u.id)},${c.id})'>
+      📋 Ver Notas
+    </button>
+
+    ${done ? `
+      <button
+        class="b-sm"
+        onclick='viewUserCert(${JSON.stringify(u.id)},${c.id})'>
+        🎓 Certificado
+      </button>
+    ` : ''}
+
+  </div>
+` : '—'}
       </tr>`;}).join('')}
     </tbody>
   </table></div></div>`);
