@@ -1796,112 +1796,154 @@ function renderAttemptHistory(atts,minScore){
    CERTIFICATE (only if course complete)
 ════════════════════════════════════════════════════════════════ */
 async function certificate(){
-  const cid=activeCourseId||CU.courseId;
-  const c=COURSES.find(x=>x.id===cid);
-  if(!c){ toast('⚠️ Selecione um curso primeiro.'); return; }
-  if(!isCourseComplete(CU.id,cid)){ toast('⚠️ Conclua todos os módulos para emitir o certificado.'); return; }
-  const certificateName=await requestCertificateName(CU.name);
-  if(!certificateName) return;
-  const avgScores=c.modules.map(m=>{
-    const atts=(getProgress(CU.id,cid).quizAttempts[m.id]||[]);
-    const best=atts.reduce((b,a)=>a.score>b.score?a:b,{score:0});
-    return best.score;
-  }).filter(s=>s>0);
-  const avg=avgScores.length?+(avgScores.reduce((a,b)=>a+b,0)/avgScores.length).toFixed(1):0;
-  const certHtml=`
-  <div class="cert" id="certBlock">
-    <div style="display:flex;align-items:center;justify-content:center;margin-bottom:30px;position:relative">
-      <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663187515352/DIIBAXsmwNKjxaBJ.png" style="height:65px;width:auto;object-fit:contain;" alt="CAW Logo">
-    </div>
-    <div class="cert-h1" style="margin-top:5px;">Certificado de Conclusão</div>
-    <div class="cert-h2">Este documento certifica que</div>
-    <div class="cert-nm">${certificateName}</div>
-    <div class="cert-bd">concluiu com êxito o curso técnico</div>
-    <div class="cert-cs">${c.title}</div>
-    <div style="font-size:13px;color:var(--t2);margin-bottom:28px">Carga Horária: ${c.hours}h · Nota Final: ${avg} · ${c.modules.length} módulo(s)</div>
-    <div class="cert-ft">
-      <div class="csig"><div class="csln"></div><div class="cssn">Hans</div><div class="cssr">Diretor · CAW Industrial</div></div>
-      <div style="text-align:center">
-        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px">Data de Conclusão</div>
-        <div style="font-weight:800;font-size:14px;color:var(--t1);margin-top:2px">${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div>
-      </div>
-      <div class="csig"><div class="csln"></div><div class="cssn">Geraldo Andrade</div><div class="cssr">Gestor de T&D</div></div>
-    </div>
-  </div>`;
-  document.getElementById('main').innerHTML=`
-  <div class="pgh">
-    <div><h1>Certificado</h1><div class="pgcr">Certificado de Conclusão — ${c.title}</div></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn b-gh" onclick="printCert()">Imprimir / Baixar</button><button class="btn b-or" onclick="sendCertificateEmail()">Enviar por e-mail</button></div>
-  </div>
-  <div class="pgb" id="certContainer">${certHtml}</div>`;
-  // Store for print
-  document.getElementById('printArea').innerHTML=certHtml;
-  CURRENT_CERTIFICATE={userId:CU.id,userName:certificateName,courseId:c.id,courseName:c.title,averageScore:avg,completedAt:new Date().toISOString()};
-  setTimeout(()=>sendCertificateEmail().catch(e=>{console.error(e);toast('Falha ao enviar e-mail.');}),500);
-}
 
-function printCert(){
-  document.getElementById('printArea').style.display='flex';
-  window.print();
-  setTimeout(()=>document.getElementById('printArea').style.display='none',1000);
-}
+  const cid = activeCourseId || CU.courseId;
+  const c = COURSES.find(x => x.id === cid);
 
-async function viewUserCert(uid, cid){
-
-  if(CU.type !== 'master' && CU.type !== 'gestor'){
-    toast('⛔ Acesso negado. Apenas Master e Gestor podem visualizar certificados de terceiros.');
+  if(!c){
+    toast('⚠️ Selecione um curso primeiro.');
     return;
   }
 
-  const u = USERS.find(x => x.id === uid);
-  const c = COURSES.find(x => x.id === cid);
-
-  if(!u || !c) return;
+  if(!isCourseComplete(CU.id, cid)){
+    toast('⚠️ Conclua todos os módulos para emitir o certificado.');
+    return;
+  }
 
   try {
 
-    toast('⏳ Carregando certificado...');
+    toast('⏳ Verificando certificado...');
+    let certificadoNovo = false;
 
-    const resultados = await Promise.all(
+    // Verifica se este usuário já emitiu o certificado deste curso
+    const { data: certificadoExistente, error: erroConsulta } =
+      await supabaseResultados
+        .from('certificates_caw')
+        .select('certificate_name, issued_at')
+        .eq('user_id', CU.id)
+        .eq('course_id', cid)
+        .maybeSingle();
+
+    if(erroConsulta){
+      console.error('Erro ao verificar certificado:', erroConsulta);
+      toast('❌ Erro ao verificar certificado.');
+      return;
+    }
+
+    let certificateName;
+    let certificateIssuedAt;
+
+    // Se já existe, NÃO pede o nome novamente
+    if(certificadoExistente){
+
+      certificateName = certificadoExistente.certificate_name;
+      certificateIssuedAt = certificadoExistente.issued_at;
+
+    } else {
+
+      // Primeira emissão
+      certificateName = await requestCertificateName(CU.name);
+
+      if(!certificateName) return;
+
+      const { data: novoCertificado, error: erroSalvar } =
+        await supabaseResultados
+          .from('certificates_caw')
+          .insert({
+            user_id: CU.id,
+            course_id: cid,
+            certificate_name: certificateName
+          })
+          .select('certificate_name, issued_at')
+          .single();
+
+      if(erroSalvar){
+        console.error('Erro ao registrar certificado:', erroSalvar);
+
+        // Se já foi criado por outro clique, recupera o existente
+        if(erroSalvar.code === '23505'){
+
+          const { data: certificadoRecuperado, error: erroRecuperar } =
+            await supabaseResultados
+              .from('certificates_caw')
+              .select('certificate_name, issued_at')
+              .eq('user_id', CU.id)
+              .eq('course_id', cid)
+              .single();
+
+          if(erroRecuperar){
+            toast('❌ Não foi possível registrar o certificado.');
+            return;
+          }
+
+          certificateName = certificadoRecuperado.certificate_name;
+          certificateIssuedAt = certificadoRecuperado.issued_at;
+
+        } else {
+          toast('❌ Não foi possível registrar o certificado.');
+          return;
+        }
+
+      } else {
+
+        certificateName = novoCertificado.certificate_name;
+        certificateIssuedAt = novoCertificado.issued_at;
+        certificadoNovo = true;
+
+      }
+    }
+
+    // Busca as melhores notas de cada módulo diretamente do Supabase
+    const melhoresNotas = await Promise.all(
 
       c.modules.map(async m => {
 
-        const { data, error } = await supabaseResultados
-          .rpc('listar_tentativas_caw', {
-            p_user_id: uid,
-            p_course_id: cid,
-            p_module_id: String(m.id)
-          });
+        const { data, error } =
+          await supabaseResultados
+            .rpc('listar_tentativas_caw', {
+              p_user_id: CU.id,
+              p_course_id: cid,
+              p_module_id: String(m.id)
+            });
 
         if(error){
           console.error(
-            `Erro ao carregar tentativas do módulo ${m.id}:`,
+            `Erro ao carregar nota do módulo ${m.id}:`,
             error
           );
-          return [];
+          return 0;
         }
 
-        return data || [];
+        const notas = (data || [])
+          .map(a => Number(a.score))
+          .filter(n => Number.isFinite(n));
+
+        return notas.length ? Math.max(...notas) : 0;
       })
 
     );
 
-    const tentativas = resultados.flat();
+    const notasValidas = melhoresNotas.filter(n => n > 0);
 
-    const melhoresNotas = c.modules.map(m => {
-
-      const atts = tentativas
-        .filter(a => Number(a.module_order) === Number(m.id))
-        .map(a => Number(a.score))
-        .filter(score => !Number.isNaN(score));
-
-      return atts.length ? Math.max(...atts) : 0;
-
-    }).filter(score => score > 0);
-
-    const avg = melhoresNotas.length
-      ? +(melhoresNotas.reduce((a,b) => a+b, 0) / melhoresNotas.length).toFixed(1)
+    const avg = notasValidas.length
+      ? +(
+          notasValidas.reduce((a,b) => a + b, 0) /
+          notasValidas.length
+        ).toFixed(1)
       : 0;
+      if(!certificadoExistente){
+  const { error: erroNota } = await supabaseResultados
+    .from('certificates_caw')
+    .update({
+      average_score: avg
+    })
+    .eq('user_id', CU.id)
+    .eq('course_id', cid);
+
+  if(erroNota){
+    console.error('Erro ao salvar nota do certificado:', erroNota);
+  }
+}
 
     const certHtml = `
     <div class="cert" id="certBlock">
@@ -1922,7 +1964,7 @@ async function viewUserCert(uid, cid){
       </div>
 
       <div class="cert-nm">
-        ${u.name}
+        ${certificateName}
       </div>
 
       <div class="cert-bd">
@@ -1946,17 +1988,236 @@ async function viewUserCert(uid, cid){
         </div>
 
         <div style="text-align:center">
+
           <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px">
             Data de Conclusão
           </div>
 
           <div style="font-weight:800;font-size:14px;color:var(--t1);margin-top:2px">
-            ${new Date().toLocaleDateString('pt-BR',{
+            ${new Date(certificateIssuedAt).toLocaleDateString('pt-BR',{
               day:'2-digit',
               month:'long',
               year:'numeric'
             })}
           </div>
+
+        </div>
+
+        <div class="csig">
+          <div class="csln"></div>
+          <div class="cssn">Geraldo Andrade</div>
+          <div class="cssr">Gestor de T&D</div>
+        </div>
+
+      </div>
+    </div>`;
+
+    document.getElementById('main').innerHTML = `
+    <div class="pgh">
+
+      <div>
+        <h1>Certificado</h1>
+        <div class="pgcr">
+          Certificado de Conclusão — ${c.title}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+
+        <button class="btn b-gh" onclick="printCert()">
+          Imprimir / Baixar
+        </button>
+
+        <button class="btn b-or" onclick="sendCertificateEmail()">
+          Enviar por e-mail
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="pgb" id="certContainer">
+      ${certHtml}
+    </div>`;
+
+    document.getElementById('printArea').innerHTML = certHtml;
+
+    CURRENT_CERTIFICATE = {
+      userId: CU.id,
+      userName: certificateName,
+      courseId: c.id,
+      courseName: c.title,
+      averageScore: avg,
+      completedAt: certificateIssuedAt
+    };
+
+    // Só envia automaticamente na primeira visualização desta sessão
+    if(certificadoNovo){
+  setTimeout(() => {
+    sendCertificateEmail().catch(e => {
+      console.error(e);
+      toast('Falha ao enviar e-mail.');
+    });
+  }, 500);
+}
+
+  } catch(err) {
+
+    console.error('Erro ao gerar certificado:', err);
+    toast('❌ Erro ao gerar certificado.');
+
+  }
+}
+
+function printCert(){
+  document.getElementById('printArea').style.display='flex';
+  window.print();
+  setTimeout(()=>document.getElementById('printArea').style.display='none',1000);
+}
+
+async function viewUserCert(uid, cid){
+
+  if(CU.type !== 'master' && CU.type !== 'gestor'){
+    toast('⛔ Acesso negado. Apenas Master e Gestor podem visualizar certificados de terceiros.');
+    return;
+  }
+
+  const u = USERS.find(x => x.id === uid);
+  const c = COURSES.find(x => x.id === cid);
+
+  if(!u || !c){
+    toast('❌ Usuário ou curso não encontrado.');
+    return;
+  }
+
+  try {
+
+    toast('⏳ Carregando certificado...');
+
+    // Busca o certificado REAL salvo no banco
+    const { data: certificado, error: erroCert } =
+      await supabaseResultados
+        .from('certificates_caw')
+        .select('certificate_name, issued_at, average_score')
+        .eq('user_id', uid)
+        .eq('course_id', cid)
+        .maybeSingle();
+
+    if(erroCert){
+      console.error('Erro ao buscar certificado:', erroCert);
+      toast('❌ Erro ao carregar certificado.');
+      return;
+    }
+
+    if(!certificado){
+      toast('⚠️ Este usuário ainda não possui certificado emitido.');
+      return;
+    }
+
+    // Se a nota estiver salva, usa exatamente a nota do certificado.
+    // Caso seja um certificado antigo sem average_score, calcula como fallback.
+    let avg = Number(certificado.average_score);
+
+    if(!Number.isFinite(avg)){
+
+      const melhoresNotas = await Promise.all(
+
+        c.modules.map(async m => {
+
+          const { data, error } =
+            await supabaseResultados
+              .rpc('listar_tentativas_caw', {
+                p_user_id: uid,
+                p_course_id: cid,
+                p_module_id: String(m.id)
+              });
+
+          if(error){
+            console.error(
+              `Erro ao carregar nota do módulo ${m.id}:`,
+              error
+            );
+            return 0;
+          }
+
+          const notas = (data || [])
+            .map(a => Number(a.score))
+            .filter(n => Number.isFinite(n));
+
+          return notas.length ? Math.max(...notas) : 0;
+        })
+
+      );
+
+      const notasValidas = melhoresNotas.filter(n => n > 0);
+
+      avg = notasValidas.length
+        ? +(
+            notasValidas.reduce((a,b) => a + b, 0) /
+            notasValidas.length
+          ).toFixed(1)
+        : 0;
+    }
+
+    const certificateName = certificado.certificate_name;
+    const certificateIssuedAt = certificado.issued_at;
+
+    const certHtml = `
+    <div class="cert" id="certBlock">
+
+      <div style="display:flex;align-items:center;justify-content:center;margin-bottom:30px;position:relative">
+        <img
+          src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663187515352/DIIBAXsmwNKjxaBJ.png"
+          style="height:65px;width:auto;object-fit:contain;"
+          alt="CAW Logo">
+      </div>
+
+      <div class="cert-h1" style="margin-top:5px;">
+        Certificado de Conclusão
+      </div>
+
+      <div class="cert-h2">
+        Este documento certifica que
+      </div>
+
+      <div class="cert-nm">
+        ${certificateName}
+      </div>
+
+      <div class="cert-bd">
+        concluiu com êxito o curso técnico
+      </div>
+
+      <div class="cert-cs">
+        ${c.title}
+      </div>
+
+      <div style="font-size:13px;color:var(--t2);margin-bottom:28px">
+        Carga Horária: ${c.hours}h · Nota Final: ${avg.toFixed(1)} · ${c.modules.length} módulo(s)
+      </div>
+
+      <div class="cert-ft">
+
+        <div class="csig">
+          <div class="csln"></div>
+          <div class="cssn">Hans</div>
+          <div class="cssr">Diretor · CAW Industrial</div>
+        </div>
+
+        <div style="text-align:center">
+
+          <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px">
+            Data de Conclusão
+          </div>
+
+          <div style="font-weight:800;font-size:14px;color:var(--t1);margin-top:2px">
+            ${new Date(certificateIssuedAt).toLocaleDateString('pt-BR',{
+              day:'2-digit',
+              month:'long',
+              year:'numeric'
+            })}
+          </div>
+
         </div>
 
         <div class="csig">
@@ -1970,31 +2231,18 @@ async function viewUserCert(uid, cid){
 
     page(
       'Visualização de Certificado',
-      `${c.title} — ${u.name}`,
-      `
-      <div style="display:flex;justify-content:center;padding:20px">
-        ${certHtml}
-      </div>
-      `,
-      `
-      <button class="btn b-gh"
-        onclick="go('${CU.type==='master'?'mReports':'gReports'}')">
-        ← Voltar
-      </button>
-
-      <button class="btn b-or"
-        onclick="printCert()">
-        🖨 Imprimir / Baixar
-      </button>
-      `
+      `Relatórios — ${certificateName}`,
+      `<div style="display:flex;justify-content:center;padding:20px">${certHtml}</div>`,
+      `<button class="btn b-gh" onclick="go('${CU.type==='master'?'mReports':'gReports'}')">← Voltar</button>
+       <button class="btn b-or" onclick="printCert()">🖨 Imprimir / Baixar</button>`
     );
 
     document.getElementById('printArea').innerHTML = certHtml;
 
-  } catch(err) {
+  } catch(err){
 
     console.error('Erro ao visualizar certificado:', err);
-    toast('❌ Erro ao carregar certificado.');
+    toast('❌ Erro ao abrir certificado.');
 
   }
 }
