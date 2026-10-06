@@ -2559,7 +2559,7 @@ function addLesson(mid,type,prefill){
       ${type!=='link'?`
       <div class="lesson-upload-row">
         <label class="lesson-upload-btn">
-          <input type="file" accept="${type==='pdf'?'.pdf':'video/*'}" style="display:none" onchange="lessonFileChosen(${lid},this)">
+          <input type="file" accept="${type==='pdf'?'.pdf':'video/*'}" style="display:none" data-storage-url="${prefill?.url||''}" onchange="lessonFileChosen(${lid},this)">
           📎 Escolher ${type==='pdf'?'PDF':'vídeo'}
         </label>
         <span id="lf-${lid}" style="font-size:12px;color:var(--t3)">${prefill?.url?'✅ Arquivo carregado':'Nenhum arquivo'}</span>
