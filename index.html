@@ -456,6 +456,28 @@ img{pointer-events:none;-webkit-user-drag:none}
   }
 }
 
+@media(max-width:900px){
+
+  .pdf-protected{
+    height:52vh !important;
+    min-height:300px !important;
+  }
+
+  #lessonArea > div:last-child{
+    position:sticky;
+    bottom:0;
+    background:var(--bg);
+    padding:14px 0 8px !important;
+    z-index:20;
+  }
+
+  #lessonArea > div:last-child .btn{
+    width:100%;
+    justify-content:center;
+    min-height:46px;
+  }
+
+}
 </style>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
