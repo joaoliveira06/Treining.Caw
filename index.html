@@ -1730,13 +1730,34 @@ function courseViewer(){
       </div>
     </div></div>
   </div>`;
+}
 
-  // Auto-select first incomplete lesson
-  for(const m of modules){
-    for(const l of m.lessons){
-      if(!isLessonDone(uid,cid,m.id,l.id)){
-        showLesson(cid,m.id,l.id); return;
-      }
+ // Auto-select first available incomplete lesson
+for(let mi=0; mi<modules.length; mi++){
+  const m = modules[mi];
+
+  const prevOk =
+    mi===0 ||
+    (
+      isModuleLessonsDone(uid,cid,modules[mi-1]) &&
+      isModulePassed(uid,cid,modules[mi-1].id)
+    );
+
+  const modLocked = c.sequential && !prevOk && mi>0;
+
+  if(modLocked) continue;
+
+  for(let li=0; li<m.lessons.length; li++){
+    const l = m.lessons[li];
+
+    const lLocked =
+      c.sequential &&
+      li>0 &&
+      !isLessonDone(uid,cid,m.id,m.lessons[li-1].id);
+
+    if(!lLocked && !isLessonDone(uid,cid,m.id,l.id)){
+      showLesson(cid,m.id,l.id);
+      return;
     }
   }
 }
@@ -1746,6 +1767,34 @@ function showLesson(cid,mid,lid){
   const m=c?.modules?.find(x=>x.id===mid);
   const l=m?.lessons?.find(x=>x.id===lid);
   if(!l) return;
+  const modules = c?.modules || [];
+const mi = modules.findIndex(x=>x.id===mid);
+const li = m?.lessons?.findIndex(x=>x.id===lid);
+
+if(mi < 0 || li < 0) return;
+
+if(c.sequential){
+
+  if(mi > 0){
+    const prev = modules[mi-1];
+
+    if(
+      !isModuleLessonsDone(CU.id,cid,prev) ||
+      !isModulePassed(CU.id,cid,prev.id)
+    ){
+      toast('🔒 Conclua o módulo anterior para desbloquear esta aula.');
+      return;
+    }
+  }
+
+  if(
+    li > 0 &&
+    !isLessonDone(CU.id,cid,mid,m.lessons[li-1].id)
+  ){
+    toast('🔒 Conclua a aula anterior primeiro.');
+    return;
+  }
+}
   document.querySelectorAll('.lr').forEach(e=>e.classList.remove('active'));
   document.getElementById(`vl-${mid}-${lid}`)?.classList.add('active');
 
@@ -2035,10 +2084,23 @@ const allAtts = (historicoBanco || []).map(a => ({
   attemptNumber: a.attempt_number
 }));
 
+const prog = getProgress(CU.id, cid);
+
+prog.quizAttempts[mid] = allAtts.map(a => ({
+  score: Number(a.score),
+  pass: a.pass === true,
+  correct: Number(a.correct),
+  total: Number(a.total),
+  date: a.date,
+  attemptNumber: a.attemptNumber
+}));
+
+saveProgress();
+
 APROVACOES_CURSO[cid] = APROVACOES_CURSO[cid] || {};
 APROVACOES_CURSO[cid][mid] = pass;
 
-showQuizResult(cid,mid,att,allAtts);
+showQuizResult(cid,mid,att,prog.quizAttempts[mid]);
 }
 
 function showQuizResult(cid,mid,lastAtt,allAtts){
