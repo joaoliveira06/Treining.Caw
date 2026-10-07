@@ -1730,7 +1730,6 @@ function courseViewer(){
       </div>
     </div></div>
   </div>`;
-}
 
  // Auto-select first available incomplete lesson
 for(let mi=0; mi<modules.length; mi++){
@@ -1758,6 +1757,7 @@ for(let mi=0; mi<modules.length; mi++){
     if(!lLocked && !isLessonDone(uid,cid,m.id,l.id)){
       showLesson(cid,m.id,l.id);
       return;
+     }
     }
   }
 }
