@@ -456,64 +456,170 @@ img{pointer-events:none;-webkit-user-drag:none}
   }
 }
 
-/* ═══════════════════════ MOBILE PDF / AÇÃO ═══════════════════════ */
+/* ═══════════════════════ MOBILE FINAL ═══════════════════════ */
 
 @media(max-width:900px){
 
-  .pdf-protected{
-    height:50vh !important;
-    min-height:280px !important;
+  /* Estrutura geral */
+  .shell{
+    height:100dvh;
+    overflow:hidden;
   }
 
-  #lessonArea{
-    padding-bottom:90px !important;
-  }
-
-  #lessonArea > div:last-child{
-    position:fixed !important;
-    left:0;
-    right:0;
-    bottom:0;
-    width:100vw;
-    background:var(--surf);
-    border-top:1px solid var(--bdr);
-    padding:10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
-    margin:0 !important;
-    z-index:150;
-    box-shadow:0 -4px 16px rgba(0,0,0,.10);
-  }
-
-  #lessonArea > div:last-child .btn{
+  .main{
     width:100%;
-    justify-content:center;
-    min-height:48px;
+    min-width:0;
+    overflow-y:auto !important;
   }
 
-}
-@media(max-width:900px){
-
-  /* Corrige a prova no celular */
-  #lessonArea:has(.qcard) > .qcard{
-    position:static !important;
-    left:auto !important;
-    right:auto !important;
-    bottom:auto !important;
-    width:100% !important;
-    max-width:680px !important;
-    min-height:auto !important;
+  /* Visualizador do curso */
+  .vwr{
+    display:flex !important;
+    flex-direction:column !important;
     height:auto !important;
+    min-height:calc(100dvh - 62px);
+    overflow:visible !important;
+  }
+
+  .main:has(.vwr){
+    overflow-y:auto !important;
+  }
+
+  /* Lista de módulos/aulas */
+  .vws{
+    width:100%;
+    max-height:180px;
+    overflow-y:auto;
+    border-right:none;
+    border-bottom:1px solid var(--bdr);
+    flex-shrink:0;
+  }
+
+  .vwc{
+    width:100%;
+    min-width:0;
+    overflow:visible !important;
+  }
+
+  .vci{
+    width:100%;
+    max-width:none;
+    padding:14px;
+  }
+
+  /* PDF */
+  .pdf-protected{
+    width:100%;
+    height:56vh !important;
+    min-height:300px !important;
+    max-height:600px;
+    margin-bottom:10px;
+  }
+
+  /* Botão da aula */
+  .lesson-actions{
+    position:static !important;
+    width:100%;
+    display:flex !important;
+    padding:12px 0 6px !important;
     margin:0 !important;
-    box-shadow:var(--s1) !important;
-    border-top:1px solid var(--bdr) !important;
+    background:transparent !important;
+    border-top:1px solid var(--bdr-lt);
+    box-shadow:none !important;
     z-index:auto !important;
   }
 
+  .lesson-actions .btn{
+    width:100%;
+    min-height:48px;
+    justify-content:center;
+  }
+
+  /* PROVA */
   #lessonArea:has(.qcard){
     padding-bottom:20px !important;
   }
 
+  #lessonArea:has(.qcard) .qcard{
+    position:static !important;
+    width:100% !important;
+    max-width:none !important;
+    min-height:0 !important;
+    height:auto !important;
+    margin:0 !important;
+    padding:16px !important;
+    box-shadow:var(--s1) !important;
+  }
+
   #lessonArea:has(.qcard) .qfoot{
     position:static !important;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+  }
+
+  #lessonArea:has(.qcard) .qfoot .btn{
+    width:100%;
+    min-height:48px;
+    justify-content:center;
+  }
+
+  #lessonArea:has(.qcard) .qb{
+    margin-bottom:18px;
+    padding-bottom:18px;
+  }
+
+  #lessonArea:has(.qcard) .opt{
+    padding:12px;
+    font-size:14px;
+    align-items:flex-start;
+  }
+
+  /* Cabeçalho da página */
+  .pgh{
+    padding:12px 12px 12px 58px;
+    min-width:0;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  .pgh h1{
+    font-size:19px;
+  }
+
+  .pgcr{
+    font-size:11px;
+  }
+
+}
+
+@media(max-width:480px){
+
+  .vws{
+    max-height:165px;
+  }
+
+  .vci{
+    padding:12px;
+  }
+
+  .pdf-protected{
+    height:52vh !important;
+    min-height:280px !important;
+  }
+
+  #lessonArea:has(.qcard) .qcard{
+    padding:13px !important;
+  }
+
+  #lessonArea:has(.qcard) .qt{
+    font-size:14px;
+  }
+
+  #lessonArea:has(.qcard) .opt{
+    font-size:13px;
+    padding:11px;
   }
 
 }
@@ -1581,10 +1687,32 @@ function courseViewer(){
   });
 
   document.getElementById('main').innerHTML=`
-  <div class="pgh">
-    <div><h1>${c.title}</h1><div class="pgcr">Meus Cursos → ${c.title}</div></div>
-    <button class="btn b-gh" style="font-size:11px;padding:7px 14px" onclick="go('myCourses')">← Voltar</button>
+<div class="pgh">
+  <div>
+    <h1>${c.title}</h1>
+    <div class="pgcr">Meus Cursos → ${c.title}</div>
   </div>
+
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+
+    ${isCourseComplete(uid,cid) ? `
+      <button
+        class="btn b-or"
+        style="font-size:11px;padding:7px 14px"
+        onclick="activeCourseId=${cid};certificate()">
+        🎓 Certificado
+      </button>
+    ` : ''}
+
+    <button
+      class="btn b-gh"
+      style="font-size:11px;padding:7px 14px"
+      onclick="go('myCourses')">
+      ← Voltar
+    </button>
+
+  </div>
+</div>
   <div class="vwr">
     <div class="vws">
       <div class="vwsh">
@@ -1695,7 +1823,7 @@ function showLesson(cid,mid,lid){
   </div>
   ${mediaHtml}
   ${l.text?`<p class="vtxt">${l.text}</p>`:''}
-  <div style="display:flex;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--bdr-lt)">
+<div class="lesson-actions" style="display:flex;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--bdr-lt)">
     ${done
       ? `<button class="btn b-ok" style="cursor:default">✅ Aula Concluída</button>`
       : `<button class="btn b-or" onclick="markLessonDone(${cid},${mid},${lid})">✓ Marcar como Concluída</button>`
@@ -1731,16 +1859,14 @@ if(!prog.completedLessons.includes(key)){
 
 CONCLUSOES_CURSO[cid][key] = true;
 }
-  toast('✅ Aula concluída!');
-  courseViewer(); // refresh to unlock next items
-  // Redireciona diretamente para a prova do módulo assim que concluir a aula
-  const c=COURSES.find(x=>x.id===cid);
-  const m=c?.modules?.find(x=>x.id===mid);
-  if(m && m.quiz && isModuleLessonsDone(CU.id,cid,m)){
-    showQuiz(cid,mid);
-  }
-}
+toast('✅ Aula concluída!');
+courseViewer();
 
+setTimeout(()=>{
+  showLesson(cid,mid,lid);
+},50);
+
+}
 /* ════════════════════════════════════════════════════════════════
    QUIZ SYSTEM
 ════════════════════════════════════════════════════════════════ */
