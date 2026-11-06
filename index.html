@@ -1762,122 +1762,175 @@ for(let mi=0; mi<modules.length; mi++){
   }
 }
 
+
 function showLesson(cid,mid,lid){
   const c=COURSES.find(x=>x.id===cid);
   const m=c?.modules?.find(x=>x.id===mid);
   const l=m?.lessons?.find(x=>x.id===lid);
   if(!l) return;
+
   const modules = c?.modules || [];
-const mi = modules.findIndex(x=>x.id===mid);
-const li = m?.lessons?.findIndex(x=>x.id===lid);
+  const mi = modules.findIndex(x=>x.id===mid);
+  const li = m?.lessons?.findIndex(x=>x.id===lid);
 
-if(mi < 0 || li < 0) return;
+  if(mi < 0 || li < 0) return;
 
-if(c.sequential){
+  if(c.sequential){
 
-  if(mi > 0){
-    const prev = modules[mi-1];
+    if(mi > 0){
+      const prev = modules[mi-1];
+
+      if(
+        !isModuleLessonsDone(CU.id,cid,prev) ||
+        !isModulePassed(CU.id,cid,prev.id)
+      ){
+        toast('🔒 Conclua o módulo anterior para desbloquear esta aula.');
+        return;
+      }
+    }
 
     if(
-      !isModuleLessonsDone(CU.id,cid,prev) ||
-      !isModulePassed(CU.id,cid,prev.id)
+      li > 0 &&
+      !isLessonDone(CU.id,cid,mid,m.lessons[li-1].id)
     ){
-      toast('🔒 Conclua o módulo anterior para desbloquear esta aula.');
+      toast('🔒 Conclua a aula anterior primeiro.');
       return;
     }
   }
 
-  if(
-    li > 0 &&
-    !isLessonDone(CU.id,cid,mid,m.lessons[li-1].id)
-  ){
-    toast('🔒 Conclua a aula anterior primeiro.');
-    return;
-  }
-}
   document.querySelectorAll('.lr').forEach(e=>e.classList.remove('active'));
   document.getElementById(`vl-${mid}-${lid}`)?.classList.add('active');
 
   const ico=l.type==='pdf'?'📄':l.type==='video'?'🎬':'📎';
   let mediaHtml='';
 
+  // VÍDEO
   if(l.type==='video'){
+
     if(l.url){
-      let src=l.url;
-      const yt=l.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-      if(yt) src=`https://www.youtube.com/embed/${yt[1]}`;
-      mediaHtml=`<div class="vbox"><iframe src="${src}" style="width:100%;height:100%;border:none" allowfullscreen></iframe></div>`;
-    } else {
-      mediaHtml=`<div class="vbox"><div class="vplay" onclick="toast('▶ Reproduzindo: ${l.title}')">▶</div><div class="vcap">${l.title}</div></div>`;
-    }
-  } else if(l.type==='pdf'){
-    if(l.url){
-      // Protected PDF: Use iframe with object fallback or Google Docs Viewer if it's a URL
-      let pdfSrc = l.url;
-      const isBase64 = l.url.startsWith('data:application/pdf;base64,');
-      
-      if (!isBase64 && l.url.startsWith('http')) {
-        // For external URLs, Google Docs Viewer is more reliable against CORS
-        pdfSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(l.url)}&embedded=true`;
+      const yt=l.url.match(
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+      );
+
+      if(yt){
+        mediaHtml=`
+          <div class="vbox">
+            <iframe
+              src="https://www.youtube.com/embed/${yt[1]}"
+              style="width:100%;height:100%;border:none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowfullscreen>
+            </iframe>
+          </div>`;
+      } else {
+        mediaHtml=`
+          <div class="vbox" style="height:auto;aspect-ratio:16/9">
+            <video
+              controls
+              playsinline
+              preload="metadata"
+              style="width:100%;height:100%;object-fit:contain">
+              <source src="${l.url}">
+              Seu navegador não suporta reprodução de vídeo.
+            </video>
+          </div>`;
       }
 
-      mediaHtml = `
-      <div class="pdf-protected" oncontextmenu="return false" style="position:relative">
-
-        <iframe
-          src="${pdfSrc}${isBase64 ? '#toolbar=0&navpanes=0&scrollbar=1&view=FitH' : ''}"
-          style="width:100%;height:100%;border:none"
-          allow="autoplay; fullscreen"
-          allowfullscreen>
-        </iframe>
-
-        <button
-          type="button"
-          onclick="this.parentElement.requestFullscreen()"
-          style="
-            position:absolute;
-            top:10px;
-            right:10px;
-            z-index:10;
-            background:rgba(0,0,0,.75);
-            color:#fff;
-            border:1px solid rgba(255,255,255,.25);
-            border-radius:6px;
-            padding:8px 11px;
-            cursor:pointer;
-            font-size:13px;
-          ">
-          ⛶ Tela cheia
-        </button>
-
-        <div class="pdf-toolbar-block"></div>
-      </div>
-      <div class="pdfrow">
-        <div class="pdfrow-ico">🔒</div>
-        <div class="pdfrow-info"><h4>${l.title}</h4><p>Visualização protegida — download não disponível</p></div>
-      </div>`;
     } else {
-      mediaHtml=`<div class="pdfrow"><div class="pdfrow-ico">📄</div><div class="pdfrow-info"><h4>${l.title}</h4><p style="color:var(--t3)">Material aguardando upload pelo administrador</p></div></div>`;
+      mediaHtml=`
+        <div class="vbox">
+          <div class="vcap">Vídeo aguardando upload</div>
+        </div>`;
     }
+
+  // PDF
+  } else if(l.type==='pdf'){
+
+    if(l.url){
+      let pdfSrc=l.url;
+      const isBase64=l.url.startsWith('data:application/pdf;base64,');
+
+      if(!isBase64 && l.url.startsWith('http')){
+        pdfSrc=`https://docs.google.com/viewer?url=${encodeURIComponent(l.url)}&embedded=true`;
+      }
+
+      mediaHtml=`
+        <div class="pdf-protected" oncontextmenu="return false" style="position:relative">
+          <iframe
+            src="${pdfSrc}${isBase64 ? '#toolbar=0&navpanes=0&scrollbar=1&view=FitH' : ''}"
+            style="width:100%;height:100%;border:none"
+            allow="autoplay; fullscreen"
+            allowfullscreen>
+          </iframe>
+
+          <button
+            type="button"
+            onclick="this.parentElement.requestFullscreen()"
+            style="
+              position:absolute;
+              top:10px;
+              right:10px;
+              z-index:10;
+              background:rgba(0,0,0,.75);
+              color:#fff;
+              border:1px solid rgba(255,255,255,.25);
+              border-radius:6px;
+              padding:8px 11px;
+              cursor:pointer;
+              font-size:13px;">
+            ⛶ Tela cheia
+          </button>
+
+          <div class="pdf-toolbar-block"></div>
+        </div>
+
+        <div class="pdfrow">
+          <div class="pdfrow-ico">🔒</div>
+          <div class="pdfrow-info">
+            <h4>${l.title}</h4>
+            <p>Visualização protegida — download não disponível</p>
+          </div>
+        </div>`;
+
+    } else {
+      mediaHtml=`
+        <div class="pdfrow">
+          <div class="pdfrow-ico">📄</div>
+          <div class="pdfrow-info">
+            <h4>${l.title}</h4>
+            <p style="color:var(--t3)">Material aguardando upload pelo administrador</p>
+          </div>
+        </div>`;
+    }
+
+  // LINK OU MATERIAL COMPLEMENTAR
   } else {
-    mediaHtml=`<div class="pdfrow"><div class="pdfrow-ico">${ico}</div><div class="pdfrow-info"><h4>${l.title}</h4><p>Material complementar</p></div></div>`;
+    mediaHtml=`
+      <div class="pdfrow">
+        <div class="pdfrow-ico">${ico}</div>
+        <div class="pdfrow-info">
+          <h4>${l.title}</h4>
+          <p>Material complementar</p>
+        </div>
+      </div>`;
   }
 
   const done=isLessonDone(CU.id,cid,mid,lid);
+
   document.getElementById('lessonArea').innerHTML=`
-  <div class="vttl">${l.title}</div>
-  <div class="vmeta">
-    <span style="background:var(--or-lt);color:var(--or);font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid rgba(255,106,0,.2)">📦 ${m.title}</span>
-    <span>👤 ${c.instructor}</span>
-  </div>
-  ${mediaHtml}
-  ${l.text?`<p class="vtxt">${l.text}</p>`:''}
-<div class="lesson-actions" style="display:flex;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--bdr-lt)">
-    ${done
-      ? `<button class="btn b-ok" style="cursor:default">✅ Aula Concluída</button>`
-      : `<button class="btn b-or" onclick="markLessonDone(${cid},${mid},${lid})">✓ Marcar como Concluída</button>`
-    }
-  </div>`;
+    <div class="vttl">${l.title}</div>
+    <div class="vmeta">
+      <span style="background:var(--or-lt);color:var(--or);font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid rgba(255,106,0,.2)">📦 ${m.title}</span>
+      <span>👤 ${c.instructor}</span>
+    </div>
+    ${mediaHtml}
+    ${l.text?`<p class="vtxt">${l.text}</p>`:''}
+    <div class="lesson-actions" style="display:flex;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--bdr-lt)">
+      ${done
+        ? `<button class="btn b-ok" style="cursor:default">✅ Aula Concluída</button>`
+        : `<button class="btn b-or" onclick="markLessonDone(${cid},${mid},${lid})">✓ Marcar como Concluída</button>`
+      }
+    </div>`;
 }
 
 
@@ -3650,12 +3703,22 @@ function base64ToBlobUrl(base64) {
   return URL.createObjectURL(blob);
 }
 
+
 async function lessonFileChosen(lid,input){
   const file=input.files[0];
   if(!file) return;
 
+  const isVideo = file.type.startsWith('video/');
+  const isPdf = file.type === 'application/pdf';
+
+  if(!isVideo && !isPdf){
+    toast('❌ Selecione um PDF ou vídeo válido.');
+    input.value='';
+    return;
+  }
+
   try {
-    toast('⏳ Enviando PDF...');
+    toast(isVideo ? '⏳ Enviando vídeo...' : '⏳ Enviando PDF...');
 
     const nomeSeguro = file.name
       .normalize('NFD')
@@ -3668,13 +3731,13 @@ async function lessonFileChosen(lid,input){
       .storage
       .from('course-pdfs')
       .upload(caminho, file, {
-        contentType: 'application/pdf',
+        contentType: file.type,
         upsert: false
       });
 
     if(uploadError){
-      console.error('Erro ao enviar PDF:', uploadError);
-      toast('❌ Erro ao enviar PDF.');
+      console.error('Erro ao enviar arquivo:', uploadError);
+      toast('❌ Erro ao enviar arquivo. Verifique o limite e as permissões do Storage.');
       return;
     }
 
@@ -3686,14 +3749,19 @@ async function lessonFileChosen(lid,input){
     input.dataset.storageUrl = publicData.publicUrl;
 
     const el=document.getElementById('lf-'+lid);
+
     if(el){
       el.textContent='✅ '+file.name;
     }
 
-    toast('✅ PDF enviado para o Supabase!');
+    toast(isVideo
+      ? '✅ Vídeo enviado para o Supabase!'
+      : '✅ PDF enviado para o Supabase!'
+    );
+
   } catch(err) {
-    console.error('Erro ao carregar PDF:', err);
-    toast('❌ Erro ao carregar PDF.');
+    console.error('Erro ao carregar arquivo:', err);
+    toast('❌ Erro ao carregar arquivo.');
   }
 }
 
